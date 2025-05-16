@@ -111,7 +111,7 @@ nav:
     - Multi Agents: examples/python/multi_agent_example/multi_agent_example.md
     - Meta Tooling: examples/python/meta_tooling.md
     - MCP: examples/python/mcp_calculator.md
-  - Contribute ❤️: https://github.com/2umtGXt3XZODBPfPgiR53A/agents-sdk-python/blob/main/CONTRIBUTING.md
+  - Contribute ❤️: https://github.com/strands-agents/sdk-python/blob/main/CONTRIBUTING.md
   - API Reference:
     - Agent: api-reference/agent.md
     - Event Loop: api-reference/event-loop.md

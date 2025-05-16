@@ -227,7 +227,7 @@ print(result["content"])
 
 The swarm tool implements a SharedMemory system that serves as a central knowledge repository for all agents in the swarm. This system maintains a thread-safe store where agents can record their contributions with metadata (including agent ID, content, phase, and timestamp). It tracks processing phases, allowing agents to retrieve only current-phase knowledge or access historical information. This shared memory architecture enables concurrent collaboration, maintains contribution history, and ensures smooth information flow between agents—all essential features for effective collective intelligence in a swarm.
 
-The full implementation of the swarm tool can be found in the [Strands Tools repository](https://github.com/2umtGXt3XZODBPfPgiR53A/agents-tools/blob/main/src/phoenix_tools/swarm.py).
+The full implementation of the swarm tool can be found in the [Strands Tools repository](https://github.com/strands-agents/tools/blob/main/src/strands_tools/swarm.py).
 
 ### Key Parameters
 

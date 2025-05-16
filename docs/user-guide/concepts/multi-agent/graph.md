@@ -240,7 +240,7 @@ This implementation demonstrates a hierarchical agent graph architecture where:
 
 ## Using the Agent Graph Tool
 
-Strands Agents SDK provides a built-in `agent_graph` tool that simplifies multi-agent system implementation. The full implementation can be found in the [Strands Tools repository](https://github.com/2umtGXt3XZODBPfPgiR53A/agents-tools/blob/main/src/phoenix_tools/agent_graph.py).
+Strands Agents SDK provides a built-in `agent_graph` tool that simplifies multi-agent system implementation. The full implementation can be found in the [Strands Tools repository](https://github.com/strands-agents/tools/blob/main/src/strands_tools/agent_graph.py).
 
 ### Creating and Using Agent Graphs
 
