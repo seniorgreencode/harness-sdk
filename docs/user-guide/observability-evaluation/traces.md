@@ -100,7 +100,7 @@ export OTEL_EXPORTER_OTLP_HEADERS="key1=value1,key2=value2"
 
 ```python
 from strands import Agent
-from strands.sdk.telemetry.tracer import get_tracer
+from strands.telemetry.tracer import get_tracer
 
 # Configure the tracer
 tracer = get_tracer(
