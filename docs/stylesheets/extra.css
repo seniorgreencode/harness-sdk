@@ -40,3 +40,8 @@
         font-size: 125%;
     }
 }
+
+[data-md-color-scheme=slate] {
+    /* Override the font color in dark mode - text is too light */
+    --md-default-fg-color: rgb(240, 246, 252)
+}
