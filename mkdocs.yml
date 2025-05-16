@@ -76,6 +76,7 @@ nav:
         - Anthropic: user-guide/concepts/model-providers/anthropic.md
         - LiteLLM: user-guide/concepts/model-providers/litellm.md
         - Ollama: user-guide/concepts/model-providers/ollama.md
+        - LlamaAPI: user-guide/concepts/model-providers/llamaapi.md
         - Custom Providers: user-guide/concepts/model-providers/custom_model_provider.md
       - Streaming:
         - Async Iterators: user-guide/concepts/streaming/async-iterators.md
@@ -106,7 +107,7 @@ nav:
     - Weather Forecaster: examples/python/weather_forecaster.md
     - File Operations: examples/python/file_operations.md
     - Agents Workflows: examples/python/agents_workflows.md
-    - Knowledge-Base Workflow: examples/python/knowledge_base_agent.md 
+    - Knowledge-Base Workflow: examples/python/knowledge_base_agent.md
     - Multi Agents: examples/python/multi_agent_example/multi_agent_example.md
     - Meta Tooling: examples/python/meta_tooling.md
     - MCP: examples/python/mcp_calculator.md
