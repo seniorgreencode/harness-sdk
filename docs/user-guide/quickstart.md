@@ -209,49 +209,15 @@ You will also need to enable model access in Amazon Bedrock for the models that 
 
 More details in the [Amazon Bedrock Model Provider](concepts/model-providers/amazon-bedrock.md) documentation.
 
+### Additional Model Providers
 
-### Ollama (Local Models)
+Strands Agents supports several other model providers beyond Amazon Bedrock:
 
-First install the `ollama` python client:
-
-```bash
-pip install strands-agents[ollama]
-```
-
-Next, import and intialize the `OllamaModel` provider:
-
-```python
-from strands import Agent
-from strands.models.ollama import OllamaModel
-
-ollama_model = OllamaModel(
-    host="http://localhost:11434"  # Ollama server address
-    model_id="llama3",  # Specify which model to use
-    temperature=0.3,
-)
-
-agent = Agent(model=ollama_model)
-```
-
-More details in the [Ollama Model Provider](concepts/model-providers/ollama.md) documentation.
-
-### Custom Model Providers
-
-We can even connect our agents to custom model providers to use any model from anywhere!
-
-```python
-from strands import Agent
-from your_company.models.custom_model import CustomModel
-
-custom_model = CustomModel(
-    model_id="your-model-id
-    temperature=0.3,
-)
-
-agent = Agent(model=custom_model)
-```
-
-See the [Custom Providers](concepts/model-providers/custom_model_provider.md) documentation for more information on creating your own model provider.
+- **[Anthropic](concepts/model-providers/anthropic.md)** - Direct API access to Claude models
+- **[LiteLLM](concepts/model-providers/litellm.md)** - Unified interface for OpenAI, Mistral, and other providers
+- **[Llama API](concepts/model-providers/llamaapi.md)** - Access to Meta's Llama models
+- **[Ollama](concepts/model-providers/ollama.md)** - Run models locally for privacy or offline use
+- **[Custom Providers](concepts/model-providers/custom_model_provider.md)** - Build your own provider for specialized needs
 
 ## Capturing Streamed Data & Events
 
