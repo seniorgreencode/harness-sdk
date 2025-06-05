@@ -1,6 +1,7 @@
 site_name: Strands Agents SDK
 site_description: Documentation for Strands Agents, a simple-to-use, code-first, lightweight library for building AI agents
 site_dir: site
+site_url: https://strandsagents.com
 
 repo_url: https://github.com/strands-agents/sdk-python
 
@@ -58,6 +59,11 @@ markdown_extensions:
 
 extra_css:
   - stylesheets/extra.css
+
+extra_javascript:
+  # Workaround for site_url breaking mermaid rendering; see the following for more info:
+  # https://github.com/squidfunk/mkdocs-material/issues/3742#issuecomment-1076068038
+  - https://unpkg.com/mermaid@11/dist/mermaid.min.js
 
 nav:
   - User Guide:
@@ -146,6 +152,15 @@ plugins:
             docstring_style: google
             show_root_heading: true
             show_source: true
+  - llmstxt:
+      sections:
+        User Guide:
+          - README.md
+          - user-guide/**/*.md
+        Examples:
+          - examples/**/*.md
+        API Reference:
+          - api-reference/*.md
 
 extra:
   social:
