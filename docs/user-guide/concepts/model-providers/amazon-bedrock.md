@@ -511,6 +511,36 @@ response = agent("If a train travels at 120 km/h and needs to cover 450 km, how 
 
 > **Note**: Not all models support structured reasoning output. Check the [inference reasoning documentation](https://docs.aws.amazon.com/bedrock/latest/userguide/inference-reasoning.html) for details on supported models.
 
+## Troubleshooting
+
+### Model access issue
+
+If you encounter the following error:
+
+> You don't have access to the model with the specified model ID
+
+This may indicate that the model is not enabled in your Amazon Bedrock account for the specified region. To resolve this issue follow the [instructions above](#requesting-access-to-bedrock-models) to request access to the model
+
+### On-demand throughput isn’t supported
+
+If you encounter the error:
+
+> Invocation of model ID XXXX with on-demand throughput isn’t supported. Retry your request with the ID or ARN of an inference profile that contains this model.
+
+This typically indicates that the model requires Cross-Region Inference, as documented in the [Amazon Bedrock documentation on inference profiles](https://docs.aws.amazon.com/bedrock/latest/userguide/inference-profiles-support.html#inference-profiles-support-system).  To resolve this issue, prefix your model ID with the appropriate regional identifier (`us.`or `eu.`) based on where your agent is running. For example:
+
+Instead of: 
+
+```
+anthropic.claude-3-7-sonnet-20250219-v1:0
+```
+
+Use: 
+
+```
+us.anthropic.claude-3-7-sonnet-20250219-v1:0
+```
+
 ## Related Resources
 
 - [Amazon Bedrock Documentation](https://docs.aws.amazon.com/bedrock/)
