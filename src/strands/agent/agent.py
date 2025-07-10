@@ -21,11 +21,11 @@ from pydantic import BaseModel
 
 from ..event_loop.event_loop import event_loop_cycle, run_tool
 from ..experimental.hooks import (
+    AfterInvocationEvent,
     AgentInitializedEvent,
-    EndRequestEvent,
+    BeforeInvocationEvent,
     HookRegistry,
     MessageAddedEvent,
-    StartRequestEvent,
 )
 from ..handlers.callback_handler import PrintingCallbackHandler, null_callback_handler
 from ..models.bedrock import BedrockModel
@@ -424,7 +424,7 @@ class Agent:
         Raises:
             ValueError: If no conversation history or prompt is provided.
         """
-        self._hooks.invoke_callbacks(StartRequestEvent(agent=self))
+        self._hooks.invoke_callbacks(BeforeInvocationEvent(agent=self))
 
         try:
             if not self.messages and not prompt:
@@ -443,7 +443,7 @@ class Agent:
             return event["output"]
 
         finally:
-            self._hooks.invoke_callbacks(EndRequestEvent(agent=self))
+            self._hooks.invoke_callbacks(AfterInvocationEvent(agent=self))
 
     async def stream_async(self, prompt: Union[str, list[ContentBlock]], **kwargs: Any) -> AsyncIterator[Any]:
         """Process a natural language prompt and yield events as an async iterator.
@@ -509,7 +509,7 @@ class Agent:
         Yields:
             Events from the event loop cycle.
         """
-        self._hooks.invoke_callbacks(StartRequestEvent(agent=self))
+        self._hooks.invoke_callbacks(BeforeInvocationEvent(agent=self))
 
         try:
             yield {"callback": {"init_event_loop": True, **kwargs}}
@@ -523,7 +523,7 @@ class Agent:
 
         finally:
             self.conversation_manager.apply_management(self)
-            self._hooks.invoke_callbacks(EndRequestEvent(agent=self))
+            self._hooks.invoke_callbacks(AfterInvocationEvent(agent=self))
 
     async def _execute_event_loop_cycle(self, kwargs: dict[str, Any]) -> AsyncGenerator[dict[str, Any], None]:
         """Execute the event loop cycle with retry logic for context window limits.

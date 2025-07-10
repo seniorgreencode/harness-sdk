@@ -3,12 +3,12 @@ from unittest.mock import Mock
 import pytest
 
 from strands.experimental.hooks import (
+    AfterInvocationEvent,
     AfterToolInvocationEvent,
     AgentInitializedEvent,
+    BeforeInvocationEvent,
     BeforeToolInvocationEvent,
-    EndRequestEvent,
     MessageAddedEvent,
-    StartRequestEvent,
 )
 from strands.types.tools import ToolResult, ToolUse
 
@@ -47,7 +47,7 @@ def initialized_event(agent):
 
 @pytest.fixture
 def start_request_event(agent):
-    return StartRequestEvent(agent=agent)
+    return BeforeInvocationEvent(agent=agent)
 
 
 @pytest.fixture
@@ -57,7 +57,7 @@ def messaged_added_event(agent):
 
 @pytest.fixture
 def end_request_event(agent):
-    return EndRequestEvent(agent=agent)
+    return AfterInvocationEvent(agent=agent)
 
 
 @pytest.fixture
