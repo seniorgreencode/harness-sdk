@@ -35,15 +35,15 @@ pip install strands-agents-tools strands-agents-builder
 
 ## Configuring Credentials
 
-Strands supports many different model providers. By default, agents use the Amazon Bedrock model provider with the Claude 3.7 model.
+Strands supports many different model providers. By default, agents use the Amazon Bedrock model provider with the Claude 4 model.
 
-To use the examples in this guide, you'll need to configure your environment with AWS credentials that have permissions to invoke the Claude 3.7 model. You can set up your credentials in several ways:
+To use the examples in this guide, you'll need to configure your environment with AWS credentials that have permissions to invoke the Claude 4 model. You can set up your credentials in several ways:
 
 1. **Environment variables**: Set `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and optionally `AWS_SESSION_TOKEN`
 2. **AWS credentials file**: Configure credentials using `aws configure` CLI command
 3. **IAM roles**: If running on AWS services like EC2, ECS, or Lambda, use IAM roles
 
-Make sure your AWS credentials have the necessary permissions to access Amazon Bedrock and invoke the Claude 3.7 model. You'll need to enable model access in the Amazon Bedrock console following the [AWS documentation](https://docs.aws.amazon.com/bedrock/latest/userguide/model-access-modify.html).
+Make sure your AWS credentials have the necessary permissions to access Amazon Bedrock and invoke the Claude 4 model. You'll need to enable model access in the Amazon Bedrock console following the [AWS documentation](https://docs.aws.amazon.com/bedrock/latest/userguide/model-access-modify.html).
 
 ## Project Setup
 
@@ -170,7 +170,7 @@ agent("Hello!")
 
 ### Identifying a configured model
 
-Strands defaults to the Bedrock model provider using Claude 3.7 Sonnet. The model your agent is using can be retrieved by accessing [`model.config`](../api-reference/models.md#strands.models.model.Model.get_config):
+Strands defaults to the Bedrock model provider using Claude 4 Sonnet. The model your agent is using can be retrieved by accessing [`model.config`](../api-reference/models.md#strands.models.model.Model.get_config):
 
 ```python
 from strands import Agent
@@ -178,7 +178,7 @@ from strands import Agent
 agent = Agent()
 
 print(agent.model.config)
-# {'model_id': 'us.anthropic.claude-3-7-sonnet-20250219-v1:0'}
+# {'model_id': 'us.anthropic.claude-sonnet-4-20250514-v1:0'}
 ```
 
 You can specify a different model in two ways:
@@ -194,7 +194,7 @@ The simplest way to specify a model is to pass the model ID string directly:
 from strands import Agent
 
 # Create an agent with a specific model by passing the model ID string
-agent = Agent(model="us.anthropic.claude-3-7-sonnet-20250219-v1:0")
+agent = Agent(model="anthropic.claude-sonnet-4-20250514-v1:0")
 ```
 
 ### Amazon Bedrock (Default)
@@ -208,7 +208,7 @@ from strands.models import BedrockModel
 
 # Create a BedrockModel
 bedrock_model = BedrockModel(
-    model_id="us.anthropic.claude-3-7-sonnet-20250219-v1:0",
+    model_id="anthropic.claude-sonnet-4-20250514-v1:0",
     region_name="us-west-2",
     temperature=0.3,
 )
