@@ -10,10 +10,13 @@ Submodules:
 
 from .base import MultiAgentBase, MultiAgentResult
 from .graph import GraphBuilder, GraphResult
+from .swarm import Swarm, SwarmResult
 
 __all__ = [
     "GraphBuilder",
     "GraphResult",
     "MultiAgentBase",
     "MultiAgentResult",
+    "Swarm",
+    "SwarmResult",
 ]

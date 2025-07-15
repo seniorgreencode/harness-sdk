@@ -72,14 +72,8 @@ class GraphState:
 
 @dataclass
 class GraphResult(MultiAgentResult):
-    """Result from graph execution - extends MultiAgentResult with graph-specific details.
+    """Result from graph execution - extends MultiAgentResult with graph-specific details."""
 
-    The status field represents the outcome of the graph execution:
-    - COMPLETED: The graph execution was successfully accomplished
-    - FAILED: The graph execution failed or produced an error
-    """
-
-    status: Status = Status.PENDING
     total_nodes: int = 0
     completed_nodes: int = 0
     failed_nodes: int = 0
@@ -146,6 +140,11 @@ class GraphBuilder:
 
     def add_node(self, executor: Agent | MultiAgentBase, node_id: str | None = None) -> GraphNode:
         """Add an Agent or MultiAgentBase instance as a node to the graph."""
+        # Check for duplicate node instances
+        seen_instances = {id(node.executor) for node in self.nodes.values()}
+        if id(executor) in seen_instances:
+            raise ValueError("Duplicate node instance detected. Each node must have a unique object instance.")
+
         # Auto-generate node_id if not provided
         if node_id is None:
             node_id = getattr(executor, "id", None) or getattr(executor, "name", None) or f"node_{len(self.nodes)}"
@@ -248,24 +247,27 @@ class Graph(MultiAgentBase):
         """Initialize Graph."""
         super().__init__()
 
+        # Validate nodes for duplicate instances
+        self._validate_graph(nodes)
+
         self.nodes = nodes
         self.edges = edges
         self.entry_points = entry_points
         self.state = GraphState()
         self.tracer = get_tracer()
 
-    def execute(self, task: str | list[ContentBlock], **kwargs: Any) -> GraphResult:
-        """Execute task synchronously."""
+    def __call__(self, task: str | list[ContentBlock], **kwargs: Any) -> GraphResult:
+        """Invoke the graph synchronously."""
 
         def execute() -> GraphResult:
-            return asyncio.run(self.execute_async(task))
+            return asyncio.run(self.invoke_async(task))
 
         with ThreadPoolExecutor() as executor:
             future = executor.submit(execute)
             return future.result()
 
-    async def execute_async(self, task: str | list[ContentBlock], **kwargs: Any) -> GraphResult:
-        """Execute the graph asynchronously."""
+    async def invoke_async(self, task: str | list[ContentBlock], **kwargs: Any) -> GraphResult:
+        """Invoke the graph asynchronously."""
         logger.debug("task=<%s> | starting graph execution", task)
 
         # Initialize state
@@ -292,6 +294,15 @@ class Graph(MultiAgentBase):
             finally:
                 self.state.execution_time = round((time.time() - start_time) * 1000)
             return self._build_result()
+
+    def _validate_graph(self, nodes: dict[str, GraphNode]) -> None:
+        """Validate graph nodes for duplicate instances."""
+        # Check for duplicate node instances
+        seen_instances = set()
+        for node in nodes.values():
+            if id(node.executor) in seen_instances:
+                raise ValueError("Duplicate node instance detected. Each node must have a unique object instance.")
+            seen_instances.add(id(node.executor))
 
     async def _execute_graph(self) -> None:
         """Unified execution flow with conditional routing."""
@@ -355,7 +366,7 @@ class Graph(MultiAgentBase):
 
             # Execute based on node type and create unified NodeResult
             if isinstance(node.executor, MultiAgentBase):
-                multi_agent_result = await node.executor.execute_async(node_input)
+                multi_agent_result = await node.executor.invoke_async(node_input)
 
                 # Create NodeResult with MultiAgentResult directly
                 node_result = NodeResult(
@@ -444,7 +455,22 @@ class Graph(MultiAgentBase):
         self.state.execution_count += node_result.execution_count
 
     def _build_node_input(self, node: GraphNode) -> list[ContentBlock]:
-        """Build input for a node based on dependency outputs."""
+        """Build input text for a node based on dependency outputs.
+
+        Example formatted output:
+        ```
+        Original Task: Analyze the quarterly sales data and create a summary report
+
+        Inputs from previous nodes:
+
+        From data_processor:
+          - Agent: Sales data processed successfully. Found 1,247 transactions totaling $89,432.
+          - Agent: Key trends: 15% increase in Q3, top product category is Electronics.
+
+        From validator:
+          - Agent: Data validation complete. All records verified, no anomalies detected.
+        ```
+        """
         # Get satisfied dependencies
         dependency_results = {}
         for edge in self.edges:
@@ -491,12 +517,12 @@ class Graph(MultiAgentBase):
     def _build_result(self) -> GraphResult:
         """Build graph result from current state."""
         return GraphResult(
+            status=self.state.status,
             results=self.state.results,
             accumulated_usage=self.state.accumulated_usage,
             accumulated_metrics=self.state.accumulated_metrics,
             execution_count=self.state.execution_count,
             execution_time=self.state.execution_time,
-            status=self.state.status,
             total_nodes=self.state.total_nodes,
             completed_nodes=len(self.state.completed_nodes),
             failed_nodes=len(self.state.failed_nodes),
