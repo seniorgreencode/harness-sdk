@@ -206,7 +206,7 @@ print(f"Token usage: {result.accumulated_usage}")
 
 ## Swarm as a Tool
 
-Agents can dynamically create and orchestrate swarms by using the `swarm` tool available in the [Strands tools package](../tools/example-tools-package.md).
+Agents can dynamically create and orchestrate swarms by using the `swarm` tool available in the [Strands tools package](../tools/community-tools-package.md).
 
 ```python
 from strands import Agent

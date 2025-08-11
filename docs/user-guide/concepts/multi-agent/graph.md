@@ -312,7 +312,7 @@ From [another_node_id]:
 
 ## Graphs as a Tool
 
-Agents can dynamically create and orchestrate graphs by using the `graph` tool available in the [Strands tools package](../tools/example-tools-package.md).
+Agents can dynamically create and orchestrate graphs by using the `graph` tool available in the [Strands tools package](../tools/community-tools-package.md).
 
 ```python
 from strands import Agent

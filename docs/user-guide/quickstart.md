@@ -24,7 +24,7 @@ Next we'll install the `strands-agents` SDK package:
 pip install strands-agents
 ```
 
-The Strands Agents SDK additionally offers the [`strands-agents-tools`]({{ tools_pypi }}) ([GitHub]({{ tools_repo_home }})) and [`strands-agents-builder`]({{ agent_builder_pypi }}) ([GitHub]({{ agent_builder_repo_home }})) packages for development. The [`strands-agents-tools`]({{ tools_pypi }}) package provides many example tools that give your agents powerful abilities. The [`strands-agents-builder`]({{ agent_builder_pypi }}) package provides an agent that helps you to build your own Strands agents and tools.
+The Strands Agents SDK additionally offers the [`strands-agents-tools`]({{ tools_pypi }}) ([GitHub]({{ tools_repo_home }})) and [`strands-agents-builder`]({{ agent_builder_pypi }}) ([GitHub]({{ agent_builder_repo_home }})) packages for development. The [`strands-agents-tools`]({{ tools_pypi }}) package is a community-driven project that provides a set of tools for your agents to use, bridging the gap between large language models and practical applications. The [`strands-agents-builder`]({{ agent_builder_pypi }}) package provides an agent that helps you to build your own Strands agents and tools.
 
 
 Let's install those development packages too:
@@ -99,7 +99,7 @@ def letter_counter(word: str, letter: str) -> int:
 
     return word.lower().count(letter.lower())
 
-# Create an agent with tools from the strands-tools example tools package
+# Create an agent with tools from the community-driven strands-tools package
 # as well as our custom letter_counter tool
 agent = Agent(tools=[calculator, current_time, python_repl, letter_counter])
 
@@ -500,7 +500,7 @@ See the [Callback Handlers](concepts/streaming/callback-handlers.md) documentati
 Ready to learn more? Check out these resources:
 
 - [Examples](../examples/README.md) - Examples for many use cases, multi-agent systems, autonomous agents, and more
-- [Example Built-in Tools](concepts/tools/example-tools-package.md) - The `strands-agents-tools` package provides many powerful example tools for your agents to use during development
+- [Community Supported Tools](concepts/tools/community-tools-package.md) - The `strands-agents-tools` package provides many powerful example tools for your agents to use during development
 - [Strands Agent Builder]({{ agent_builder_repo_home }}) - Use the accompanying `strands-agents-builder` agent builder to harness the power of LLMs to generate your own tools and agents
 - [Agent Loop](concepts/agents/agent-loop.md) - Learn how Strands agents work under the hood
 - [State & Sessions](concepts/agents/state.md) - Understand how agents maintain context and state across a conversation or workflow

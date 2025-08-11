@@ -43,7 +43,7 @@ Key features include:
 * **Lightweight and gets out of your way**: A simple agent loop that just works and is fully customizable.
 * **Production ready**: Full observability, tracing, and deployment options for running agents at scale.
 * **Model, provider, and deployment agnostic**: Strands supports many different models from many different providers.
-* **Powerful built-in tools**: Get started quickly with tools for a broad set of capabilities.
+* **Community-driven tools**: Get started quickly with a powerful set of community-contributed tools for a broad set of capabilities.
 * **Multi-agent and autonomous agents**: Apply advanced techniques to your AI systems like agent teams and agents that improve themselves over time.
 * **Conversational, non-conversational, streaming, and non-streaming**: Supports all types of agents for various workloads.
 * **Safety and security as a priority**: Run agents responsibly while protecting data.
@@ -54,7 +54,7 @@ Ready to learn more? Check out these resources:
 
 - [Quickstart](user-guide/quickstart.md) - A more detailed introduction to Strands Agents
 - [Examples](examples/README.md) - Examples for many use cases, types of agents, multi-agent systems, autonomous agents, and more
-- [Example Built-in Tools](user-guide/concepts/tools/example-tools-package.md) - The {{ link_strands_tools }} package provides many powerful example tools for your agents to use during development
+- [Community Supported Tools](user-guide/concepts/tools/community-tools-package.md) - The {{ link_strands_tools }} package is a community-driven project that provides a powerful set of tools for your agents to use
 - [Strands Agent Builder]({{ agent_builder_repo_home }}) - Use the accompanying {{ link_strands_builder }} agent builder to harness the power of LLMs to generate your own tools and agents
 
 !!! tip "Join Our Community"

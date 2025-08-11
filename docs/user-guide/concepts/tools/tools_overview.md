@@ -2,7 +2,7 @@
 
 Tools are the primary mechanism for extending agent capabilities, enabling them to perform actions beyond simple text generation. Tools allow agents to interact with external systems, access data, and manipulate their environment.
 
-Strands offers built-in example tools to get started quickly experimenting with agents and tools during development. For more information, see [Example Built-in Tools](example-tools-package.md).
+Strands Agents Tools is a community-driven project that provides a powerful set of tools for your agents to use. For more information, see [Strands Agents Tools](community-tools-package.md).
 
 ## Adding Tools to Agents
 
@@ -242,11 +242,11 @@ with sse_mcp_client:
 
 For more information on using MCP tools, see [MCP Tools](mcp-tools.md).
 
-### 3. Example Built-in Tools
+### 3. Community Built Tools
 
-For rapid prototyping and common tasks, Strands offers an optional [example built-in tools package]({{ tools_repo }}) with pre-built tools for development. These tools cover a wide variety of capabilities including File Operations, Shell & Local System control, Web & Network for API calls, and Agents & Workflows for orchestration.
+For rapid prototyping and common tasks, Strands offers a [community-supported tools package]({{ tools_repo }}) with pre-built tools for development. These tools cover a wide variety of capabilities including File Operations, Shell & Local System control, Web & Network for API calls, and Agents & Workflows for orchestration.
 
-For a complete list of available tools and their detailed descriptions, see [Example Built-in Tools](example-tools-package.md).
+For a complete list of available tools and their detailed descriptions, see [Community Tools Package](community-tools-package.md).
 
 ## Tool Design Best Practices
 
