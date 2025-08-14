@@ -76,6 +76,13 @@ Every tool added to an agent also becomes a method accessible directly on the ag
 result = agent.tool.file_read(path="/path/to/file.txt", mode="view")
 ```
 
+When calling tools directly as methods, always use keyword arguments - positional arguments are *not* supported for direct method calls:
+
+```python
+# This will NOT work - positional arguments are not supported
+result = agent.tool.file_read("/path/to/file.txt", "view")  # ❌ Don't do this
+```
+
 If a tool name contains hyphens, you can invoke the tool using underscores instead:
 
 ```python
