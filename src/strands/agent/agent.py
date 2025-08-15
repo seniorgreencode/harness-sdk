@@ -19,6 +19,7 @@ from typing import Any, AsyncGenerator, AsyncIterator, Callable, Mapping, Option
 from opentelemetry import trace as trace_api
 from pydantic import BaseModel
 
+from .. import _identifier
 from ..event_loop.event_loop import event_loop_cycle, run_tool
 from ..handlers.callback_handler import PrintingCallbackHandler, null_callback_handler
 from ..hooks import (
@@ -249,12 +250,15 @@ class Agent:
                 Defaults to None.
             session_manager: Manager for handling agent sessions including conversation history and state.
                 If provided, enables session-based persistence and state management.
+
+        Raises:
+            ValueError: If agent id contains path separators.
         """
         self.model = BedrockModel() if not model else BedrockModel(model_id=model) if isinstance(model, str) else model
         self.messages = messages if messages is not None else []
 
         self.system_prompt = system_prompt
-        self.agent_id = agent_id or _DEFAULT_AGENT_ID
+        self.agent_id = _identifier.validate(agent_id or _DEFAULT_AGENT_ID, _identifier.Identifier.AGENT)
         self.name = name or _DEFAULT_AGENT_NAME
         self.description = description
 
