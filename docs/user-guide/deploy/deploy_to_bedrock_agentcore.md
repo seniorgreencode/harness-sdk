@@ -590,13 +590,13 @@ Before you can view metrics and traces, complete this one-time setup:
 
 Add to your `requirements.txt`:
 ```text
-aws-opentelemetry-distro>=0.10.0
+aws-opentelemetry-distro>=0.10.1
 boto3
 ```
 
 Or install directly:
 ```bash
-pip install aws-opentelemetry-distro>=0.10.0 boto3
+pip install aws-opentelemetry-distro>=0.10.1 boto3
 ```
 
 #### 2. Run With Auto-Instrumentation
