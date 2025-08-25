@@ -20,7 +20,7 @@ from opentelemetry import trace as trace_api
 from pydantic import BaseModel
 
 from .. import _identifier
-from ..event_loop.event_loop import event_loop_cycle, run_tool
+from ..event_loop.event_loop import event_loop_cycle
 from ..handlers.callback_handler import PrintingCallbackHandler, null_callback_handler
 from ..hooks import (
     AfterInvocationEvent,
@@ -35,6 +35,8 @@ from ..models.model import Model
 from ..session.session_manager import SessionManager
 from ..telemetry.metrics import EventLoopMetrics
 from ..telemetry.tracer import get_tracer, serialize
+from ..tools.executors import ConcurrentToolExecutor
+from ..tools.executors._executor import ToolExecutor
 from ..tools.registry import ToolRegistry
 from ..tools.watcher import ToolWatcher
 from ..types.content import ContentBlock, Message, Messages
@@ -136,13 +138,14 @@ class Agent:
                     "name": normalized_name,
                     "input": kwargs.copy(),
                 }
+                tool_results: list[ToolResult] = []
+                invocation_state = kwargs
 
                 async def acall() -> ToolResult:
-                    # Pass kwargs as invocation_state
-                    async for event in run_tool(self._agent, tool_use, kwargs):
+                    async for event in ToolExecutor._stream(self._agent, tool_use, tool_results, invocation_state):
                         _ = event
 
-                    return cast(ToolResult, event)
+                    return tool_results[0]
 
                 def tcall() -> ToolResult:
                     return asyncio.run(acall())
@@ -208,6 +211,7 @@ class Agent:
         state: Optional[Union[AgentState, dict]] = None,
         hooks: Optional[list[HookProvider]] = None,
         session_manager: Optional[SessionManager] = None,
+        tool_executor: Optional[ToolExecutor] = None,
     ):
         """Initialize the Agent with the specified configuration.
 
@@ -250,6 +254,7 @@ class Agent:
                 Defaults to None.
             session_manager: Manager for handling agent sessions including conversation history and state.
                 If provided, enables session-based persistence and state management.
+            tool_executor: Definition of tool execution stragety (e.g., sequential, concurrent, etc.).
 
         Raises:
             ValueError: If agent id contains path separators.
@@ -323,6 +328,8 @@ class Agent:
         self._session_manager = session_manager
         if self._session_manager:
             self.hooks.add_hook(self._session_manager)
+
+        self.tool_executor = tool_executor or ConcurrentToolExecutor()
 
         if hooks:
             for hook in hooks:
