@@ -311,6 +311,20 @@ Traces provide detailed insight into the agent's reasoning process. You can acce
 
 This observability data helps you debug agent behavior, optimize performance, and understand the agent's reasoning process. For detailed information, see [Observability](observability-evaluation/observability.md), [Traces](observability-evaluation/traces.md), and [Metrics](observability-evaluation/metrics.md).
 
+
+## Console Output
+
+Agents display their reasoning and responses in real-time to the console by default. You can disable this output by setting `callback_handler=None` when creating your agent:
+
+```python
+agent = Agent(
+    tools=[calculator, current_time, letter_counter],
+    callback_handler=None,
+)
+```
+
+Learn more in the [Callback Handlers](concepts/streaming/callback-handlers.md) documentation.
+
 ## Debug Logs
 
 To enable debug logs in our agent, configure the `strands` logger:
