@@ -115,6 +115,26 @@ async def async_example():
 asyncio.run(async_example())
 ```
 
+### ToolContext
+
+Tools can access their execution context by setting `context=True` and including a `tool_context` parameter. The `ToolContext` provides access to the invoking agent and current tool use data:
+
+```python
+from strands import tool, Agent, ToolContext
+
+@tool(context=True)
+def get_self_name(tool_context: ToolContext) -> str:
+    return f"The agent name is {tool_context.agent.name}"
+
+@tool(context=True)
+def get_tool_use_id(tool_context: ToolContext) -> str:
+    return f"Tool use is {tool_context.tool_use["toolUseId"]}"
+
+agent = Agent(tools=[get_self_name, get_tool_use_id], name="Best agent")
+agent("What is your name?")
+agent("What is the tool use id?")
+```
+
 ## Class-Based Tools
 
 Class-based tools allow you to create tools that maintain state and leverage object-oriented programming patterns. This approach is useful when your tools need to share resources, maintain context between invocations, follow object-oriented design principles, customize tools before passing them to an agent, or create different tool configurations for different agents.
