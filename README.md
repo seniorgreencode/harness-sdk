@@ -32,7 +32,15 @@
   </p>
 </div>
 
-This MCP server provides documentation about Strands Agents to your GenAI tools, so you can use your favorite AI coding assistant to vibe-code Strands Agents.
+This MCP server provides curated documentation access to your GenAI tools via llms.txt files, enabling AI coding assistants to search and retrieve relevant documentation with intelligent ranking.
+
+## Features
+
+- **Smart Document Search**: TF-IDF based search with Markdown-aware scoring that prioritizes titles, headers, and code blocks
+- **Curated Content**: Indexes documentation from llms.txt files with clean, human-readable titles
+- **On-Demand Fetching**: Lazy-loads full document content only when needed for optimal performance
+- **Snippet Generation**: Provides contextual snippets with relevance scoring for quick overview
+- **Real URL Support**: Works with actual HTTPS URLs while maintaining backward compatibility
 
 ## Prerequisites
 
@@ -54,9 +62,17 @@ In `~/.aws/amazonq/mcp.json`:
 ```json
 {
   "mcpServers": {
-    "strands": {
+    "strands-agents": {
       "command": "uvx",
-      "args": ["strands-agents-mcp-server"]
+      "args": ["strands-agents-mcp-server"],
+      "env": {
+        "FASTMCP_LOG_LEVEL": "INFO"
+      },
+      "disabled": false,
+      "autoApprove": [
+        "search_docs",
+        "fetch_doc"
+      ]
     }
   }
 }
@@ -94,9 +110,17 @@ In `~/.cursor/mcp.json`:
 ```json
 {
   "mcpServers": {
-    "strands": {
+    "strands-agents": {
       "command": "uvx",
-      "args": ["strands-agents-mcp-server"]
+      "args": ["strands-agents-mcp-server"],
+      "env": {
+        "FASTMCP_LOG_LEVEL": "INFO"
+      },
+      "disabled": false,
+      "autoApprove": [
+        "search_docs",
+        "fetch_doc"
+      ]
     }
   }
 }
@@ -107,14 +131,42 @@ In `~/.cursor/mcp.json`:
 You can quickly test the MCP server using the MCP Inspector:
 
 ```bash
+# For published package
 npx @modelcontextprotocol/inspector uvx strands-agents-mcp-server
+
+# For local development
+npx @modelcontextprotocol/inspector python -m strands_mcp_server
 ```
 
 Note: This requires [npx](https://docs.npmjs.com/cli/v11/commands/npx) to be installed on your system. It comes bundled with [Node.js](https://nodejs.org/). 
 
 The Inspector is also useful for troubleshooting MCP server issues as it provides detailed connection and protocol information. For an in-depth guide, have a look at the [MCP Inspector documentation](https://modelcontextprotocol.io/docs/tools/inspector).
 
-## Server development
+## Getting Started
+
+1. **Install prerequisites**:
+   - Install [uv](https://github.com/astral-sh/uv) following the [official installation instructions](https://github.com/astral-sh/uv#installation)
+   - Make sure you have [Node.js](https://nodejs.org/) installed for npx commands
+
+2. **Configure your MCP client**:
+   - Choose your preferred MCP client from the installation examples above
+   - Add the Strands Agents MCP server configuration to your client
+
+3. **Test the connection**:
+   ```bash
+   # For published package
+   npx @modelcontextprotocol/inspector uvx strands-agents-mcp-server
+   
+   # For local development
+   npx @modelcontextprotocol/inspector python -m strands_mcp_server
+   ```
+
+4. **Start using the documentation tools**:
+   - Use `search_docs` to find relevant documentation with intelligent ranking
+   - Use `fetch_doc` to retrieve full content from specific URLs
+   - The server automatically indexes curated content from llms.txt files
+
+## Server Development
 
 ```bash
 git clone https://github.com/strands-agents/mcp-server.git
