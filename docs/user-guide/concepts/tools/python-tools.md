@@ -166,6 +166,43 @@ agent("What is your name?")
 agent("What is the tool use id?")
 ```
 
+### Tool Streaming
+
+Async tools can yield intermediate results to provide real-time progress updates. Each yielded value becomes a streaming event (see [async iterators](../streaming/async-iterators.md) or [callback handlers](../streaming/callback-handlers.md) for more information), with the final value serving as the tool's return result:
+
+```python
+from datetime import datetime
+import asyncio
+from strands import tool
+
+@tool
+async def process_dataset(records: int) -> str:
+    """Process records with progress updates."""
+    start = datetime.now()
+    
+    for i in range(records):
+        await asyncio.sleep(0.1)
+        if i % 10 == 0:
+            elapsed = datetime.now() - start
+            yield f"Processed {i}/{records} records in {elapsed.total_seconds():.1f}s"
+    
+    yield f"Completed {records} records in {(datetime.now() - start).total_seconds():.1f}s"
+```
+
+Stream events contain a `tool_stream_event` dictionary with `tool_use` (invocation info) and `data` (yielded value) fields:
+
+```python
+async def tool_stream_example():
+    agent = Agent(tools=[process_dataset])
+
+    async for event in agent.stream_async("Process 50 records"):
+        if tool_stream := event.get("tool_stream_event"):
+            if update := tool_stream.get("data"):
+                print(f"Progress: {update}")
+
+asyncio.run(tool_stream_example())
+```
+
 ## Class-Based Tools
 
 Class-based tools allow you to create tools that maintain state and leverage object-oriented programming patterns. This approach is useful when your tools need to share resources, maintain context between invocations, follow object-oriented design principles, customize tools before passing them to an agent, or create different tool configurations for different agents.
