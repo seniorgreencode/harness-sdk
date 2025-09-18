@@ -148,7 +148,7 @@ asyncio.run(async_example())
 
 ### ToolContext
 
-Tools can access their execution context by setting `context=True` and including a `tool_context` parameter. The `ToolContext` provides access to the invoking agent and current tool use data:
+Tools can access their execution context by setting `context=True` and including a `tool_context` parameter. The [`ToolContext`](../../../api-reference/types.md#strands.types.tools.ToolContext) provides access to the invoking agent, current tool use data, and invocation state:
 
 ```python
 from strands import tool, Agent, ToolContext
@@ -161,9 +161,15 @@ def get_self_name(tool_context: ToolContext) -> str:
 def get_tool_use_id(tool_context: ToolContext) -> str:
     return f"Tool use is {tool_context.tool_use["toolUseId"]}"
 
-agent = Agent(tools=[get_self_name, get_tool_use_id], name="Best agent")
+@tool(context=True)
+def get_invocation_state(tool_context: ToolContext) -> str:
+    return f"Invocation state: {tool_context.invocation_state["custom_data"]}"
+
+agent = Agent(tools=[get_self_name, get_tool_use_id, get_invocation_state], name="Best agent")
+
 agent("What is your name?")
 agent("What is the tool use id?")
+agent("What is the invocation state?", custom_data="You're the best agent ;)")
 ```
 
 ### Tool Streaming
