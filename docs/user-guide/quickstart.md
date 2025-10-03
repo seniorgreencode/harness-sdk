@@ -442,9 +442,9 @@ Strands Agents supports several other model providers beyond Amazon Bedrock:
 - **[Ollama](concepts/model-providers/ollama.md)** - Run models locally for privacy or offline use
 - **[OpenAI](concepts/model-providers/openai.md)** - Access to OpenAI or OpenAI-compatible models
 - **[Writer](concepts/model-providers/writer.md)** - Access to Palmyra models
-- **[Cohere](concepts/model-providers/cohere.md)** - Use Cohere models through an OpenAI compatible interface
+- **[Cohere <sup> community</sup>](../community/model-providers/cohere.md)** - Use Cohere models through an OpenAI compatible interface
+- **[CLOVA Studio<sup> community</sup>](../community/model-providers/clova-studio.md)** - Korean-optimized AI models from Naver Cloud Platform
 - **[Custom Providers](concepts/model-providers/custom_model_provider.md)** - Build your own provider for specialized needs
-- **[CLOVA Studio<sup> community</sup>](concepts/model-providers/clova-studio.md)** - Korean-optimized AI models from Naver Cloud Platform
 
 ## Capturing Streamed Data & Events
 
