@@ -155,6 +155,11 @@ except ValueError as e:
 
 ### Using State in Tools
 
+!!! note
+
+    To use `ToolContext` in your tool function, the parameter must be named `tool_context`. See [ToolContext documentation](../tools/python-tools.md#toolcontext) for more information.
+
+
 Agent state is particularly useful for maintaining information across tool executions:
 
 ```python
