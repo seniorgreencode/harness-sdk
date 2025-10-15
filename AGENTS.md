@@ -286,6 +286,56 @@ import { Tool } from '@/tools'
 import type { Options, Config } from '@/types'
 ```
 
+### Interface and Type Organization
+
+**When defining interfaces or types, organize them so the top-level interface comes first, followed by its dependencies, and then all nested dependencies.**
+
+```typescript
+// ✅ Correct - Top-level first, then dependencies
+export interface Message {
+  role: Role
+  content: ContentBlock[]
+}
+
+export type Role = 'user' | 'assistant'
+
+export type ContentBlock = TextBlock | ToolUseBlock | ToolResultBlock
+
+export interface TextBlock {
+  type: 'text'
+  text: string
+}
+
+export interface ToolUseBlock {
+  type: 'toolUse'
+  name: string
+  toolUseId: string
+  input: JSONValue
+}
+
+export interface ToolResultBlock {
+  type: 'toolResult'
+  toolUseId: string
+  status: 'success' | 'error'
+  content: ToolResultContent[]
+}
+
+// ❌ Wrong - Dependencies before top-level
+export type Role = 'user' | 'assistant'
+
+export interface TextBlock {
+  type: 'text'
+  text: string
+}
+
+export interface Message {  // Top-level should come first
+  role: Role
+  content: ContentBlock[]
+}
+```
+
+**Rationale**: This ordering makes files more readable by providing an overview first, then details.
+
 ### Error Handling
 
 ```typescript
@@ -364,6 +414,29 @@ describe('calculateTotal', () => {
 describe('calculateTotal', () => {
   it('works', () => {
     expect(calculateTotal([1, 2, 3])).toBeTruthy()
+  })
+})
+```
+
+### Testing Guidelines
+
+**Testing Approach:**
+- You **MUST** write tests for implementations (functions, classes, methods)
+- You **SHOULD NOT** write tests for interfaces since TypeScript compiler already enforces type correctness
+- You **SHOULD** write Vitest type tests (`*.test-d.ts`) for complex types to ensure backwards compatibility
+
+**Example Implementation Test:**
+```typescript
+describe('BedrockModelProvider', () => {
+  it('streams messages correctly', async () => {
+    const provider = new BedrockModelProvider(config)
+    const stream = provider.stream(messages)
+    
+    for await (const event of stream) {
+      if (event.type === 'modelMessageStartEvent') {
+        expect(event.role).toBe('assistant')
+      }
+    }
   })
 })
 ```
