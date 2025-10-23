@@ -232,6 +232,41 @@ export function getData(): any {
 - Use TypeScript strict mode features
 - Leverage type inference where appropriate
 
+### Class Field Naming Conventions
+
+**Private fields**: Use underscore prefix for private class fields to improve readability and distinguish them from public members.
+
+```typescript
+// ✅ Good: Private fields with underscore prefix
+export class Example {
+  private readonly _config: Config
+  private _state: State
+
+  constructor(config: Config) {
+    this._config = config
+    this._state = { initialized: false }
+  }
+
+  public getConfig(): Config {
+    return this._config
+  }
+}
+
+// ❌ Bad: No underscore for private fields
+export class Example {
+  private readonly config: Config  // Missing underscore
+
+  constructor(config: Config) {
+    this.config = config
+  }
+}
+```
+
+**Rules**:
+- Private fields MUST use underscore prefix (e.g., `_field`)
+- Public fields MUST NOT use underscore prefix
+- This convention improves code readability and makes the distinction between public and private members immediately visible
+
 ### Documentation Requirements
 
 **TSDoc format** (required for all exported functions):
@@ -456,6 +491,63 @@ describe('calculateTotal', () => {
   })
 })
 ```
+
+### Object Assertion Best Practices
+
+**Prefer testing entire objects at once** instead of individual properties for better readability and test coverage.
+
+```typescript
+// ✅ Good: Verify entire object at once
+it('returns expected user object', () => {
+  const user = getUser('123')
+  expect(user).toEqual({
+    id: '123',
+    name: 'John Doe',
+    email: 'john@example.com',
+    isActive: true
+  })
+})
+
+// ✅ Good: Verify entire array of objects
+it('yields expected stream events', async () => {
+  const events = await collectEvents(stream)
+  expect(events).toEqual([
+    { type: 'streamEvent', data: 'Starting...' },
+    { type: 'streamEvent', data: 'Processing...' },
+    { type: 'streamEvent', data: 'Complete!' },
+  ])
+})
+
+// ❌ Bad: Testing individual properties
+it('returns expected user object', () => {
+  const user = getUser('123')
+  expect(user).toBeDefined()
+  expect(user.id).toBe('123')
+  expect(user.name).toBe('John Doe')
+  expect(user.email).toBe('john@example.com')
+  expect(user.isActive).toBe(true)
+})
+
+// ❌ Bad: Testing array elements individually in a loop
+it('yields expected stream events', async () => {
+  const events = await collectEvents(stream)
+  for (const event of events) {
+    expect(event.type).toBe('streamEvent')
+    expect(event).toHaveProperty('data')
+  }
+})
+```
+
+**Benefits of testing entire objects**:
+- **More concise**: Single assertion instead of multiple
+- **Better test coverage**: Catches unexpected additional or missing properties
+- **More readable**: Clear expectation of the entire structure
+- **Easier to maintain**: Changes to the object require updating one place
+
+**Use cases**:
+- Always use `toEqual()` for object and array comparisons
+- Use `toBe()` only for primitive values and reference equality
+- When testing error objects, verify the entire structure including message and type
 
 ### Testing Guidelines
 

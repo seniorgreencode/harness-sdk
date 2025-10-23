@@ -35,6 +35,12 @@ export type {
   ToolChoice,
 } from './tools/types'
 
+// Tool interface and related types
+export type { Tool, ToolContext, ToolStreamEvent, ToolStreamGenerator } from './tools/tool'
+
+// FunctionTool implementation
+export { FunctionTool } from './tools/function-tool'
+
 // Streaming event types
 export type {
   Usage,
