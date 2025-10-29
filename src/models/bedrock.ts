@@ -40,6 +40,13 @@ import { ensureDefined } from '../types/validation'
 const DEFAULT_BEDROCK_MODEL_ID = 'global.anthropic.claude-sonnet-4-5-20250929-v1:0'
 
 /**
+ * Models that require the status field in tool results.
+ * According to AWS Bedrock API documentation, the status field is only supported by Anthropic Claude models.
+ * @see https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_ToolResultBlock.html
+ */
+const MODELS_INCLUDE_STATUS = ['anthropic.claude']
+
+/**
  * Error messages that indicate context window overflow.
  * Used to detect when input exceeds the model's context window.
  */
@@ -136,6 +143,14 @@ export interface BedrockModelConfig extends BaseModelConfig {
    * @see https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/client/bedrock-runtime/command/ConverseStreamCommand/
    */
   additionalArgs?: JSONValue
+
+  /**
+   * Flag to include status field in tool results.
+   * - `true`: Always include status field
+   * - `false`: Never include status field
+   * - `'auto'`: Automatically determine based on model ID (default)
+   */
+  includeToolResultStatus?: 'auto' | boolean
 }
 
 /**
@@ -444,6 +459,31 @@ export class BedrockModel implements Model<BedrockModelConfig, BedrockRuntimeCli
   }
 
   /**
+   * Determines whether to include the status field in tool results.
+   *
+   * Uses the includeToolResultStatus config option:
+   * - If explicitly true, always include status
+   * - If explicitly false, never include status
+   * - If 'auto' (default), check if model ID matches known patterns
+   *
+   * @returns True if status field should be included, false otherwise
+   */
+  private _shouldIncludeToolResultStatus(): boolean {
+    const includeStatus = this._config.includeToolResultStatus ?? 'auto'
+
+    if (includeStatus === true) return true
+    if (includeStatus === false) return false
+
+    // Auto-detection mode: check if modelId contains any pattern
+    const shouldInclude = MODELS_INCLUDE_STATUS.some((pattern) => this._config.modelId?.includes(pattern))
+
+    // Log debug message for auto-detection
+    console.debug(`Auto-detected includeToolResultStatus=${shouldInclude} for model: ${this._config.modelId}`)
+
+    return shouldInclude
+  }
+
+  /**
    * Formats a content block for Bedrock API.
    *
    * @param block - SDK content block
@@ -477,7 +517,7 @@ export class BedrockModel implements Model<BedrockModelConfig, BedrockRuntimeCli
           toolResult: {
             toolUseId: block.toolUseId,
             content,
-            status: block.status,
+            ...(this._shouldIncludeToolResultStatus() && { status: block.status }),
           },
         }
       }

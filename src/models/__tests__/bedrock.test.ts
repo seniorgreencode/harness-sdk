@@ -878,4 +878,168 @@ describe('BedrockModel', () => {
       })
     })
   })
+
+  describe('includeToolResultStatus configuration', async () => {
+    const { ConverseStreamCommand } = await import('@aws-sdk/client-bedrock-runtime')
+    const mockConverseStreamCommand = vi.mocked(ConverseStreamCommand)
+
+    describe('when includeToolResultStatus is true', () => {
+      it('always includes status field in tool results', async () => {
+        const provider = new BedrockModel({ includeToolResultStatus: true })
+        const messages: Message[] = [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'toolResultBlock',
+                toolUseId: 'tool-123',
+                status: 'success',
+                content: [{ type: 'toolResultTextContent', text: 'Result' }],
+              },
+            ],
+          },
+        ]
+
+        collectEvents(provider.stream(messages))
+
+        expect(mockConverseStreamCommand).toHaveBeenLastCalledWith({
+          messages: [
+            {
+              content: [
+                {
+                  toolResult: {
+                    content: [{ text: 'Result' }],
+                    status: 'success',
+                    toolUseId: 'tool-123',
+                  },
+                },
+              ],
+              role: 'user',
+            },
+          ],
+          modelId: expect.any(String),
+        })
+      })
+    })
+
+    describe('when includeToolResultStatus is false', () => {
+      it('never includes status field in tool results', async () => {
+        const provider = new BedrockModel({ includeToolResultStatus: false })
+        const messages: Message[] = [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'toolResultBlock',
+                toolUseId: 'tool-123',
+                status: 'success',
+                content: [{ type: 'toolResultTextContent', text: 'Result' }],
+              },
+            ],
+          },
+        ]
+
+        collectEvents(provider.stream(messages))
+
+        expect(mockConverseStreamCommand).toHaveBeenLastCalledWith({
+          messages: [
+            {
+              content: [
+                {
+                  toolResult: {
+                    content: [{ text: 'Result' }],
+                    toolUseId: 'tool-123',
+                  },
+                },
+              ],
+              role: 'user',
+            },
+          ],
+          modelId: expect.any(String),
+        })
+      })
+    })
+
+    describe('when includeToolResultStatus is auto', () => {
+      it('includes status field for Claude models', async () => {
+        const provider = new BedrockModel({
+          modelId: 'anthropic.claude-3-5-sonnet-20241022-v2:0',
+          includeToolResultStatus: 'auto',
+        })
+        const messages: Message[] = [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'toolResultBlock',
+                toolUseId: 'tool-123',
+                status: 'success',
+                content: [{ type: 'toolResultTextContent', text: 'Result' }],
+              },
+            ],
+          },
+        ]
+
+        collectEvents(provider.stream(messages))
+
+        expect(mockConverseStreamCommand).toHaveBeenLastCalledWith({
+          messages: [
+            {
+              content: [
+                {
+                  toolResult: {
+                    content: [{ text: 'Result' }],
+                    status: 'success',
+                    toolUseId: 'tool-123',
+                  },
+                },
+              ],
+              role: 'user',
+            },
+          ],
+          modelId: 'anthropic.claude-3-5-sonnet-20241022-v2:0',
+        })
+      })
+    })
+
+    describe('when includeToolResultStatus is undefined (default)', () => {
+      it('follows auto logic for non-Claude models', async () => {
+        const provider = new BedrockModel({
+          modelId: 'amazon.nova-lite-v1:0',
+        })
+        const messages: Message[] = [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'toolResultBlock',
+                toolUseId: 'tool-123',
+                status: 'success',
+                content: [{ type: 'toolResultTextContent', text: 'Result' }],
+              },
+            ],
+          },
+        ]
+
+        collectEvents(provider.stream(messages))
+
+        expect(mockConverseStreamCommand).toHaveBeenLastCalledWith({
+          messages: [
+            {
+              content: [
+                {
+                  toolResult: {
+                    content: [{ text: 'Result' }],
+                    toolUseId: 'tool-123',
+                  },
+                },
+              ],
+              role: 'user',
+            },
+          ],
+          modelId: 'amazon.nova-lite-v1:0',
+        })
+      })
+    })
+  })
 })
