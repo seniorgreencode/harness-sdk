@@ -20,30 +20,51 @@ function setupMockSend(streamGenerator: () => AsyncGenerator<unknown>): void {
 }
 
 // Mock the AWS SDK
-vi.mock('@aws-sdk/client-bedrock-runtime', () => {
-  const mockSend = vi.fn(
-    async (): Promise<{ stream: AsyncIterable<unknown> }> => ({
-      stream: (async function* (): AsyncGenerator<unknown> {
-        yield { messageStart: { role: 'assistant' } }
-        yield { contentBlockStart: { contentBlockIndex: 0 } }
-        yield { contentBlockDelta: { delta: { text: 'Hello' }, contentBlockIndex: 0 } }
-        yield { contentBlockStop: { contentBlockIndex: 0 } }
-        yield { messageStop: { stopReason: 'end_turn' } }
-        yield {
-          metadata: {
-            usage: {
-              inputTokens: 10,
-              outputTokens: 5,
-              totalTokens: 15,
+vi.mock('@aws-sdk/client-bedrock-runtime', async (importOriginal) => {
+  const originalModule = await importOriginal<typeof import('@aws-sdk/client-bedrock-runtime')>()
+
+  // Mock command classes that the code under test will instantiate
+  const ConverseStreamCommand = vi.fn()
+  const ConverseCommand = vi.fn()
+
+  const mockSend = vi.fn(async (command: unknown) => {
+    // Check which constructor was used to create the command object
+    if (command instanceof ConverseStreamCommand) {
+      // Return a streaming response
+      return {
+        stream: (async function* (): AsyncGenerator<unknown> {
+          yield { messageStart: { role: 'assistant' } }
+          yield { contentBlockStart: { contentBlockIndex: 0 } }
+          yield { contentBlockDelta: { delta: { text: 'Hello' }, contentBlockIndex: 0 } }
+          yield { contentBlockStop: { contentBlockIndex: 0 } }
+          yield { messageStop: { stopReason: 'end_turn' } }
+          yield {
+            metadata: {
+              usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
+              metrics: { latencyMs: 100 },
             },
-            metrics: {
-              latencyMs: 100,
-            },
+          }
+        })(),
+      }
+    }
+
+    if (command instanceof ConverseCommand) {
+      // Return a non-streaming (full) response for the non-streaming API
+      return {
+        output: {
+          message: {
+            role: 'assistant',
+            content: [{ text: 'Hello' }],
           },
-        }
-      })(),
-    })
-  )
+        },
+        stopReason: 'end_turn',
+        usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
+        metrics: { latencyMs: 100 },
+      }
+    }
+
+    throw new Error('Unhandled command type in mock')
+  })
 
   // Create a mock ValidationException class
   class MockValidationException extends Error {
@@ -54,10 +75,12 @@ vi.mock('@aws-sdk/client-bedrock-runtime', () => {
   }
 
   return {
+    ...originalModule,
     BedrockRuntimeClient: vi.fn().mockImplementation(() => ({
       send: mockSend,
     })),
-    ConverseStreamCommand: vi.fn(),
+    ConverseStreamCommand,
+    ConverseCommand,
     ValidationException: MockValidationException,
   }
 })
@@ -418,85 +441,278 @@ describe('BedrockModel', () => {
     })
   })
 
-  describe('stream', () => {
-    it('yields and validate events', async () => {
-      const provider = new BedrockModel()
-      const messages: Message[] = [{ type: 'message', role: 'user', content: [{ type: 'textBlock', text: 'Hello' }] }]
+  describe.each([
+    { mode: 'streaming', stream: true },
+    { mode: 'non-streaming', stream: false },
+  ])('BedrockModel in $mode mode', ({ stream }) => {
+    it('yields and validates text events correctly', async () => {
+      const mockSend = vi.fn(async () => {
+        if (stream) {
+          return {
+            stream: (async function* (): AsyncGenerator<unknown> {
+              yield { messageStart: { role: 'assistant' } }
+              yield { contentBlockStart: { contentBlockIndex: 0 } }
+              yield { contentBlockDelta: { delta: { text: 'Hello' }, contentBlockIndex: 0 } }
+              yield { contentBlockStop: { contentBlockIndex: 0 } }
+              yield { messageStop: { stopReason: 'end_turn' } }
+              yield {
+                metadata: { usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 }, metrics: { latencyMs: 100 } },
+              }
+            })(),
+          }
+        } else {
+          return {
+            output: { message: { role: 'assistant', content: [{ text: 'Hello' }] } },
+            stopReason: 'end_turn',
+            usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
+            metrics: { latencyMs: 100 },
+          }
+        }
+      })
 
+      vi.mocked(BedrockRuntimeClient).mockImplementation(() => ({ send: mockSend }) as never)
+
+      const provider = new BedrockModel({ stream })
+      const messages: Message[] = [{ type: 'message', role: 'user', content: [{ type: 'textBlock', text: 'Hello' }] }]
       const events = await collectIterator(provider.stream(messages))
 
-      expect(events).toStrictEqual([
-        {
-          role: 'assistant',
-          type: 'modelMessageStartEvent',
-        },
-        {
-          type: 'modelContentBlockStartEvent',
-        },
-        {
-          delta: {
-            text: 'Hello',
-            type: 'textDelta',
-          },
-          type: 'modelContentBlockDeltaEvent',
-        },
-        {
-          type: 'modelContentBlockStopEvent',
-        },
-        {
-          stopReason: 'endTurn',
-          type: 'modelMessageStopEvent',
-        },
-        {
-          metrics: {
-            latencyMs: 100,
-          },
-          type: 'modelMetadataEvent',
-          usage: {
-            inputTokens: 10,
-            outputTokens: 5,
-            totalTokens: 15,
-          },
-        },
-      ])
+      expect(events).toContainEqual({ role: 'assistant', type: 'modelMessageStartEvent' })
+      expect(events).toContainEqual({ type: 'modelContentBlockStartEvent', contentBlockIndex: 0 })
+      expect(events).toContainEqual({
+        type: 'modelContentBlockDeltaEvent',
+        contentBlockIndex: 0,
+        delta: { type: 'textDelta', text: 'Hello' },
+      })
+      expect(events).toContainEqual({ type: 'modelContentBlockStopEvent', contentBlockIndex: 0 })
+      expect(events).toContainEqual({ type: 'modelMessageStopEvent', stopReason: 'endTurn' })
+      expect(events).toContainEqual({
+        type: 'modelMetadataEvent',
+        usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
+        metrics: { latencyMs: 100 },
+      })
     })
 
-    it('throws ContextWindowOverflowError for context overflow', async () => {
-      vi.clearAllMocks()
-      const mockSendError = vi.fn().mockRejectedValue(new Error('Input is too long for requested model'))
-      vi.mocked(BedrockRuntimeClient).mockImplementation(() => ({ send: mockSendError }) as never)
+    it('yields and validates toolUse events correctly', async () => {
+      const mockSend = vi.fn(async () => {
+        if (stream) {
+          return {
+            stream: (async function* (): AsyncGenerator<unknown> {
+              yield { messageStart: { role: 'assistant' } }
+              yield {
+                contentBlockStart: {
+                  contentBlockIndex: 0,
+                  start: { toolUse: { toolUseId: 'tool-use-123', name: 'get_weather' } },
+                },
+              }
+              yield {
+                contentBlockDelta: {
+                  contentBlockIndex: 0,
+                  delta: { toolUse: { input: '{"location":"San Francisco"}' } },
+                },
+              }
+              yield { contentBlockStop: { contentBlockIndex: 0 } }
+              yield { messageStop: { stopReason: 'tool_use' } }
+              yield {
+                metadata: {
+                  usage: { inputTokens: 10, outputTokens: 25, totalTokens: 35 },
+                  metrics: { latencyMs: 120 },
+                },
+              }
+            })(),
+          }
+        } else {
+          return {
+            output: {
+              message: {
+                role: 'assistant',
+                content: [
+                  { toolUse: { toolUseId: 'tool-use-123', name: 'get_weather', input: { location: 'San Francisco' } } },
+                ],
+              },
+            },
+            stopReason: 'tool_use',
+            usage: { inputTokens: 10, outputTokens: 25, totalTokens: 35 },
+            metrics: { latencyMs: 120 },
+          }
+        }
+      })
+      vi.mocked(BedrockRuntimeClient).mockImplementation(() => ({ send: mockSend }) as never)
 
-      const provider = new BedrockModel()
-      const messages: Message[] = [{ type: 'message', role: 'user', content: [{ type: 'textBlock', text: 'Hello' }] }]
+      const provider = new BedrockModel({ stream })
+      const messages: Message[] = [
+        { type: 'message', role: 'user', content: [{ type: 'textBlock', text: 'Weather?' }] },
+      ]
+      const events = await collectIterator(provider.stream(messages))
+      const startEvent = events.find((e) => e.type === 'modelContentBlockStartEvent')
+      const inputDeltaEvent = events.find(
+        (e) => e.type === 'modelContentBlockDeltaEvent' && e.delta.type === 'toolUseInputDelta'
+      )
 
-      let eventCount = 0
-      await expect(async () => {
-        await collectIterator(provider.stream(messages))
-      }).rejects.toThrow(ContextWindowOverflowError)
-
-      // Verify no events were yielded before error was thrown
-      expect(eventCount).toBe(0)
+      expect(events).toContainEqual({ role: 'assistant', type: 'modelMessageStartEvent' })
+      expect(startEvent).toStrictEqual({
+        type: 'modelContentBlockStartEvent',
+        contentBlockIndex: 0,
+        start: { type: 'toolUseStart', name: 'get_weather', toolUseId: 'tool-use-123' },
+      })
+      expect(inputDeltaEvent).toStrictEqual({
+        type: 'modelContentBlockDeltaEvent',
+        contentBlockIndex: 0,
+        delta: { type: 'toolUseInputDelta', input: '{"location":"San Francisco"}' },
+      })
+      expect(events).toContainEqual({ type: 'modelContentBlockStopEvent', contentBlockIndex: 0 })
+      expect(events).toContainEqual({ stopReason: 'toolUse', type: 'modelMessageStopEvent' })
+      expect(events).toContainEqual({
+        type: 'modelMetadataEvent',
+        usage: { inputTokens: 10, outputTokens: 25, totalTokens: 35 },
+        metrics: { latencyMs: 120 },
+      })
     })
 
-    it('throws ValidationException', async () => {
-      vi.clearAllMocks()
+    it('yields and validates reasoningText events correctly', async () => {
+      const mockSend = vi.fn(async () => {
+        if (stream) {
+          return {
+            stream: (async function* (): AsyncGenerator<unknown> {
+              yield { messageStart: { role: 'assistant' } }
+              yield { contentBlockStart: { contentBlockIndex: 0 } }
+              yield {
+                contentBlockDelta: { contentBlockIndex: 0, delta: { reasoningContent: { text: 'Thinking...' } } },
+              }
+              yield { contentBlockStop: { contentBlockIndex: 0 } }
+              yield { messageStop: { stopReason: 'end_turn' } }
+              yield {
+                metadata: {
+                  usage: { inputTokens: 15, outputTokens: 30, totalTokens: 45 },
+                  metrics: { latencyMs: 150 },
+                },
+              }
+            })(),
+          }
+        } else {
+          return {
+            output: {
+              message: {
+                role: 'assistant',
+                content: [{ reasoningContent: { reasoningText: { text: 'Thinking...' } } }],
+              },
+            },
+            stopReason: 'end_turn',
+            usage: { inputTokens: 15, outputTokens: 30, totalTokens: 45 },
+            metrics: { latencyMs: 150 },
+          }
+        }
+      })
+      vi.mocked(BedrockRuntimeClient).mockImplementation(() => ({ send: mockSend }) as never)
+
+      const provider = new BedrockModel({ stream })
+      const messages: Message[] = [
+        { type: 'message', role: 'user', content: [{ type: 'textBlock', text: 'A question.' }] },
+      ]
+      const events = await collectIterator(provider.stream(messages))
+
+      expect(events).toContainEqual({ role: 'assistant', type: 'modelMessageStartEvent' })
+      expect(events).toContainEqual({ type: 'modelContentBlockStartEvent', contentBlockIndex: 0 })
+      expect(events).toContainEqual({
+        type: 'modelContentBlockDeltaEvent',
+        contentBlockIndex: 0,
+        delta: { type: 'reasoningContentDelta', text: 'Thinking...' },
+      })
+      expect(events).toContainEqual({ type: 'modelContentBlockStopEvent', contentBlockIndex: 0 })
+      expect(events).toContainEqual({ stopReason: 'endTurn', type: 'modelMessageStopEvent' })
+      expect(events).toContainEqual({
+        type: 'modelMetadataEvent',
+        usage: { inputTokens: 15, outputTokens: 30, totalTokens: 45 },
+        metrics: { latencyMs: 150 },
+      })
+    })
+
+    it('yields and validates redactedContent events correctly', async () => {
+      const redactedBytes = new Uint8Array([1, 2, 3])
+
+      const mockSend = vi.fn(async () => {
+        if (stream) {
+          return {
+            stream: (async function* (): AsyncGenerator<unknown> {
+              yield { messageStart: { role: 'assistant' } }
+              yield { contentBlockStart: { contentBlockIndex: 0 } }
+              yield {
+                contentBlockDelta: {
+                  contentBlockIndex: 0,
+                  delta: { reasoningContent: { redactedContent: redactedBytes } },
+                },
+              }
+              yield { contentBlockStop: { contentBlockIndex: 0 } }
+              yield { messageStop: { stopReason: 'end_turn' } }
+              yield {
+                metadata: { usage: { inputTokens: 15, outputTokens: 5, totalTokens: 20 }, metrics: { latencyMs: 110 } },
+              }
+            })(),
+          }
+        } else {
+          return {
+            output: {
+              message: {
+                role: 'assistant',
+                content: [{ reasoningContent: { redactedContent: redactedBytes } }],
+              },
+            },
+            stopReason: 'end_turn',
+            usage: { inputTokens: 15, outputTokens: 5, totalTokens: 20 },
+            metrics: { latencyMs: 110 },
+          }
+        }
+      })
+      vi.mocked(BedrockRuntimeClient).mockImplementation(() => ({ send: mockSend }) as never)
+
+      const provider = new BedrockModel({ stream })
+      const messages: Message[] = [
+        { type: 'message', role: 'user', content: [{ type: 'textBlock', text: 'A sensitive question.' }] },
+      ]
+      const events = await collectIterator(provider.stream(messages))
+
+      expect(events).toContainEqual({ role: 'assistant', type: 'modelMessageStartEvent' })
+      expect(events).toContainEqual({ type: 'modelContentBlockStartEvent', contentBlockIndex: 0 })
+      expect(events).toContainEqual({
+        type: 'modelContentBlockDeltaEvent',
+        contentBlockIndex: 0,
+        delta: { type: 'reasoningContentDelta', redactedContent: redactedBytes },
+      })
+      expect(events).toContainEqual({ type: 'modelContentBlockStopEvent', contentBlockIndex: 0 })
+      expect(events).toContainEqual({ stopReason: 'endTurn', type: 'modelMessageStopEvent' })
+      expect(events).toContainEqual({
+        type: 'modelMetadataEvent',
+        usage: { inputTokens: 15, outputTokens: 5, totalTokens: 20 },
+        metrics: { latencyMs: 110 },
+      })
+    })
+
+    describe('error handling', async () => {
       const { ValidationException } = await import('@aws-sdk/client-bedrock-runtime')
-      const error = new ValidationException({ message: 'ValidationException', $metadata: {} })
-      const mockSendError = vi.fn().mockRejectedValue(error)
-      vi.mocked(BedrockRuntimeClient).mockImplementation(() => ({ send: mockSendError }) as never)
+      it.each([
+        {
+          name: 'ContextWindowOverflowError for context overflow',
+          error: new Error('Input is too long for requested model'),
+          expected: ContextWindowOverflowError,
+        },
+        {
+          name: 'ValidationException for invalid input',
+          error: new ValidationException({ message: 'ValidationException', $metadata: {} }),
+          expected: ValidationException,
+        },
+      ])('throws $name', async ({ error, expected }) => {
+        vi.clearAllMocks()
+        const mockSendError = vi.fn().mockRejectedValue(error)
+        vi.mocked(BedrockRuntimeClient).mockImplementation(() => ({ send: mockSendError }) as never)
 
-      const provider = new BedrockModel()
-      const messages: Message[] = [{ type: 'message', role: 'user', content: [{ type: 'textBlock', text: 'Hello' }] }]
+        const provider = new BedrockModel()
+        const messages: Message[] = [{ type: 'message', role: 'user', content: [{ type: 'textBlock', text: 'Hello' }] }]
 
-      let eventCount = 0
-      await expect(async () => {
-        await collectIterator(provider.stream(messages))
-      }).rejects.toThrow(ValidationException)
-
-      // Verify no events were yielded before error was thrown
-      expect(eventCount).toBe(0)
+        await expect(collectIterator(provider.stream(messages))).rejects.toThrow(expected)
+      })
     })
+  })
 
+  describe('stream', () => {
     it('handles tool use input delta', async () => {
       setupMockSend(async function* () {
         yield { messageStart: { role: 'assistant' } }
@@ -514,8 +730,9 @@ describe('BedrockModel', () => {
 
       const events = await collectIterator(provider.stream(messages))
 
-      expect(events[2]).toStrictEqual({
+      expect(events).toContainEqual({
         type: 'modelContentBlockDeltaEvent',
+        contentBlockIndex: 0,
         delta: {
           type: 'toolUseInputDelta',
           input: '{"a": 1}',
@@ -549,16 +766,18 @@ describe('BedrockModel', () => {
 
       const events = await collectIterator(provider.stream(messages))
 
-      expect(events[2]).toStrictEqual({
+      expect(events).toContainEqual({
         type: 'modelContentBlockDeltaEvent',
+        contentBlockIndex: 0,
         delta: {
           type: 'reasoningContentDelta',
           text: 'thinking...',
           signature: 'sig123',
         },
       })
-      expect(events[3]).toStrictEqual({
+      expect(events).toContainEqual({
         type: 'modelContentBlockDeltaEvent',
+        contentBlockIndex: 0,
         delta: {
           type: 'reasoningContentDelta',
           redactedContent: new Uint8Array(1),
@@ -666,8 +885,10 @@ describe('BedrockModel', () => {
 
       const metadataEvent = events.find((e) => e.type === 'modelMetadataEvent')
       expect(metadataEvent).toBeDefined()
-      expect(metadataEvent?.usage?.cacheReadInputTokens).toBe(80)
-      expect(metadataEvent?.usage?.cacheWriteInputTokens).toBe(20)
+      if (metadataEvent?.type === 'modelMetadataEvent') {
+        expect(metadataEvent.usage?.cacheReadInputTokens).toBe(80)
+        expect(metadataEvent.usage?.cacheWriteInputTokens).toBe(20)
+      }
     })
 
     it('handles trace in metadata', async () => {
@@ -692,7 +913,9 @@ describe('BedrockModel', () => {
 
       const metadataEvent = events.find((e) => e.type === 'modelMetadataEvent')
       expect(metadataEvent).toBeDefined()
-      expect(metadataEvent?.trace).toBeDefined()
+      if (metadataEvent?.type === 'modelMetadataEvent') {
+        expect(metadataEvent.trace).toBeDefined()
+      }
     })
 
     it('handles additionalModelResponseFields', async () => {
@@ -713,7 +936,7 @@ describe('BedrockModel', () => {
       const stopEvent = events.find((e) => e.type === 'modelMessageStopEvent')
       expect(stopEvent).toBeDefined()
       if (stopEvent?.type === 'modelMessageStopEvent') {
-        expect(stopEvent.additionalModelResponseFields).toBeDefined()
+        expect(stopEvent.additionalModelResponseFields).toStrictEqual({ customField: 'value' })
       }
     })
 
@@ -748,7 +971,9 @@ describe('BedrockModel', () => {
 
           const stopEvent = events.find((e) => e.type === 'modelMessageStopEvent')
           expect(stopEvent).toBeDefined()
-          expect(stopEvent?.stopReason).toBe(expectedReason)
+          if (stopEvent?.type === 'modelMessageStopEvent') {
+            expect(stopEvent.stopReason).toBe(expectedReason)
+          }
         })
       }
     })

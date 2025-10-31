@@ -14,7 +14,7 @@ import {
   type ConverseStreamCommandInput,
   type ConverseStreamOutput,
   type Message as BedrockMessage,
-  type ContentBlock as BedrockContentBlock,
+  ContentBlock as BedrockContentBlock,
   type InferenceConfiguration,
   type Tool,
   type MessageStartEvent as BedrockMessageStartEvent,
@@ -23,11 +23,15 @@ import {
   type ContentBlockStopEvent as BedrockContentBlockStopEvent,
   type MessageStopEvent as BedrockMessageStopEvent,
   type ConverseStreamMetadataEvent as BedrockConverseStreamMetadataEvent,
-  ContentBlockDelta,
   type ToolConfiguration,
+  ConverseCommand,
+  type ConverseCommandOutput,
+  type ToolUseBlockDelta,
+  ReasoningContentBlockDelta,
+  ReasoningContentBlock,
 } from '@aws-sdk/client-bedrock-runtime'
 import { Model, type BaseModelConfig, type StreamOptions } from '../models/model'
-import type { Message, ContentBlock } from '../types/messages'
+import type { Message, ContentBlock, ToolUseBlock } from '../types/messages'
 import type { ModelStreamEvent, ReasoningContentDelta, Usage } from '../models/streaming'
 import type { JSONValue } from '../types/json'
 import { ContextWindowOverflowError } from '../errors'
@@ -145,6 +149,16 @@ export interface BedrockModelConfig extends BaseModelConfig {
   additionalArgs?: JSONValue
 
   /**
+   * Whether or not to stream responses from the model.
+   *
+   * This will use the ConverseStream API instead of the Converse API.
+   *
+   * @see https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_Converse.html
+   * @see https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_ConverseStream.html
+   */
+  stream?: boolean
+
+  /**
    * Flag to include status field in tool results.
    * - `true`: Always include status field
    * - `false`: Never include status field
@@ -234,6 +248,7 @@ export class BedrockModel extends Model<BedrockModelConfig> {
    */
   constructor(options?: BedrockModelOptions) {
     super()
+
     const { region, clientConfig, ...modelConfig } = options ?? {}
 
     // Initialize model config with default model ID if not provided
@@ -324,18 +339,26 @@ export class BedrockModel extends Model<BedrockModelConfig> {
       // Format the request for Bedrock
       const request = this._formatRequest(messages, options)
 
-      // Create and send the command
-      const command = new ConverseStreamCommand(request)
-      const response = await this._client.send(command)
+      if (this._config.stream !== false) {
+        // Create and send the command
+        const command = new ConverseStreamCommand(request)
+        const response = await this._client.send(command)
 
-      // Stream the response
-      if (response.stream) {
-        for await (const chunk of response.stream) {
-          // Map Bedrock events to SDK events
-          const events = this._mapBedrockEventToSDKEvents(chunk)
-          for (const event of events) {
-            yield event
+        // Stream the response
+        if (response.stream) {
+          for await (const chunk of response.stream) {
+            // Map Bedrock events to SDK events
+            const events = this._mapStreamedBedrockEventToSDKEvent(chunk)
+            for (const event of events) {
+              yield event
+            }
           }
+        }
+      } else {
+        const command = new ConverseCommand(request)
+        const response = await this._client.send(command)
+        for (const event of this._mapBedrockEventToSDKEvent(response)) {
+          yield event
         }
       }
     } catch (error) {
@@ -549,13 +572,113 @@ export class BedrockModel extends Model<BedrockModelConfig> {
     }
   }
 
+  private _mapBedrockEventToSDKEvent(event: ConverseCommandOutput): ModelStreamEvent[] {
+    const events: ModelStreamEvent[] = []
+
+    // Message start
+    const output = ensureDefined(event.output, 'event.output')
+    const message = ensureDefined(output.message, 'output.message')
+    const role = ensureDefined(message.role, 'message.role')
+    events.push({
+      type: 'modelMessageStartEvent',
+      role,
+    })
+
+    // Match on content blocks
+    const blockHandlers = {
+      text: (textBlock: string, index: number): void => {
+        events.push({ type: 'modelContentBlockStartEvent', contentBlockIndex: index })
+        events.push({
+          type: 'modelContentBlockDeltaEvent',
+          contentBlockIndex: index,
+          delta: { type: 'textDelta', text: textBlock },
+        })
+        events.push({ type: 'modelContentBlockStopEvent', contentBlockIndex: index })
+      },
+      toolUse: (block: ToolUseBlock, index: number): void => {
+        events.push({
+          type: 'modelContentBlockStartEvent',
+          contentBlockIndex: index,
+          start: {
+            type: 'toolUseStart',
+            name: ensureDefined(block.name, 'toolUse.name'),
+            toolUseId: ensureDefined(block.toolUseId, 'toolUse.toolUseId'),
+          },
+        })
+        events.push({
+          type: 'modelContentBlockDeltaEvent',
+          contentBlockIndex: index,
+          delta: { type: 'toolUseInputDelta', input: JSON.stringify(ensureDefined(block.input, 'toolUse.input')) },
+        })
+        events.push({ type: 'modelContentBlockStopEvent', contentBlockIndex: index })
+      },
+      reasoningContent: (block: ReasoningContentBlock, index: number): void => {
+        if (!block) return
+        events.push({ type: 'modelContentBlockStartEvent', contentBlockIndex: index })
+
+        const delta: ReasoningContentDelta = { type: 'reasoningContentDelta' }
+        if (block.reasoningText) {
+          delta.text = ensureDefined(block.reasoningText.text, 'reasoningText.text')
+          if (block.reasoningText.signature) delta.signature = block.reasoningText.signature
+        } else if (block.redactedContent) {
+          delta.redactedContent = block.redactedContent
+        }
+
+        if (Object.keys(delta).length > 1) {
+          events.push({ type: 'modelContentBlockDeltaEvent', contentBlockIndex: index, delta })
+        }
+
+        events.push({ type: 'modelContentBlockStopEvent', contentBlockIndex: index })
+      },
+    }
+
+    const content = ensureDefined(message.content, 'message.content')
+    content.forEach((block, index) => {
+      for (const key in block) {
+        if (key in blockHandlers) {
+          const handlerKey = key as keyof typeof blockHandlers
+          // @ts-expect-error - We know the value type corresponds to the handler key.
+          blockHandlers[handlerKey](block[handlerKey], index)
+        } else {
+          console.warn(`Skipping unsupported block key: ${key}`)
+        }
+      }
+    })
+
+    const stopReasonRaw = ensureDefined(event.stopReason, 'event.stopReason') as string
+    events.push({
+      type: 'modelMessageStopEvent',
+      stopReason: this._transformStopReason(stopReasonRaw, event),
+    })
+
+    const usage = ensureDefined(event.usage, 'output.usage')
+    const metadataEvent: ModelStreamEvent = {
+      type: 'modelMetadataEvent',
+      usage: {
+        inputTokens: ensureDefined(usage.inputTokens, 'usage.inputTokens'),
+        outputTokens: ensureDefined(usage.outputTokens, 'usage.outputTokens'),
+        totalTokens: ensureDefined(usage.totalTokens, 'usage.totalTokens'),
+      },
+    }
+
+    if (event.metrics) {
+      metadataEvent.metrics = {
+        latencyMs: ensureDefined(event.metrics.latencyMs, 'metrics.latencyMs'),
+      }
+    }
+
+    events.push(metadataEvent)
+
+    return events
+  }
+
   /**
    * Maps a Bedrock event to SDK streaming events.
    *
    * @param chunk - Bedrock event chunk
    * @returns Array of SDK streaming events
    */
-  private _mapBedrockEventToSDKEvents(chunk: ConverseStreamOutput): ModelStreamEvent[] {
+  private _mapStreamedBedrockEventToSDKEvent(chunk: ConverseStreamOutput): ModelStreamEvent[] {
     const events: ModelStreamEvent[] = []
 
     // Extract the event type key
@@ -577,13 +700,10 @@ export class BedrockModel extends Model<BedrockModelConfig> {
 
         const event: ModelStreamEvent = {
           type: 'modelContentBlockStartEvent',
+          contentBlockIndex: ensureDefined(data.contentBlockIndex, 'contentBlockStart.contentBlockIndex'),
         }
 
-        if (data.contentBlockIndex) {
-          event.contentBlockIndex = data.contentBlockIndex
-        }
-
-        if (data.start && data.start.toolUse) {
+        if (data.start?.toolUse) {
           const toolUse = data.start.toolUse
           event.start = {
             type: 'toolUseStart',
@@ -598,73 +718,56 @@ export class BedrockModel extends Model<BedrockModelConfig> {
 
       case 'contentBlockDelta': {
         const data = eventData as BedrockContentBlockDeltaEvent
+        const contentBlockIndex = ensureDefined(data.contentBlockIndex, 'contentBlockDelta.contentBlockIndex')
         const delta = ensureDefined(data.delta, 'contentBlockDelta.delta')
-        let event: ModelStreamEvent | undefined = {
-          type: 'modelContentBlockDeltaEvent',
-          delta: { type: 'textDelta', text: '' },
-        }
-
-        if (data.contentBlockIndex) {
-          event.contentBlockIndex = data.contentBlockIndex
-        }
-
-        const deltaKey = ensureDefined(Object.keys(delta)[0], 'delta key') as keyof ContentBlockDelta
-
-        switch (deltaKey) {
-          case 'text': {
-            event.delta = {
-              type: 'textDelta',
-              text: ensureDefined(delta.text, 'delta.text'),
-            }
-            break
-          }
-          case 'toolUse': {
-            const toolUse = ensureDefined(delta.toolUse, 'delta.toolUse')
-            event.delta = {
-              type: 'toolUseInputDelta',
-              input: ensureDefined(toolUse.input, 'toolUse.input'),
-            }
-            break
-          }
-          case 'reasoningContent': {
-            const reasoning = ensureDefined(delta.reasoningContent, 'delta.reasoningContent')
-
-            const reasoningDelta: ReasoningContentDelta = {
-              type: 'reasoningContentDelta',
-            }
+        const deltaHandlers = {
+          text: (textValue: string): void => {
+            events.push({
+              type: 'modelContentBlockDeltaEvent',
+              contentBlockIndex,
+              delta: { type: 'textDelta', text: textValue },
+            })
+          },
+          toolUse: (toolUse: ToolUseBlockDelta): void => {
+            if (!toolUse?.input) return
+            events.push({
+              type: 'modelContentBlockDeltaEvent',
+              contentBlockIndex,
+              delta: { type: 'toolUseInputDelta', input: toolUse.input },
+            })
+          },
+          reasoningContent: (reasoning: ReasoningContentBlockDelta): void => {
+            if (!reasoning) return
+            const reasoningDelta: ReasoningContentDelta = { type: 'reasoningContentDelta' }
             if (reasoning.text) reasoningDelta.text = reasoning.text
             if (reasoning.signature) reasoningDelta.signature = reasoning.signature
             if (reasoning.redactedContent) reasoningDelta.redactedContent = reasoning.redactedContent
 
-            event.delta = reasoningDelta
-            break
-          }
+            if (Object.keys(reasoningDelta).length > 1) {
+              events.push({ type: 'modelContentBlockDeltaEvent', contentBlockIndex, delta: reasoningDelta })
+            }
+          },
+        }
 
-          default: {
-            console.warn(`Unsupported delta format: ${JSON.stringify(delta)}`)
-            event = undefined
-            break
+        for (const key in delta) {
+          if (key in deltaHandlers) {
+            const handlerKey = key as keyof typeof deltaHandlers
+            // @ts-expect-error - We know the value type corresponds to the handler key.
+            deltaHandlers[handlerKey](delta[handlerKey])
+          } else {
+            console.warn(`Skipping unsupported delta key: ${key}`)
           }
         }
 
-        if (event !== undefined) {
-          events.push(event)
-        }
         break
       }
 
       case 'contentBlockStop': {
         const data = eventData as BedrockContentBlockStopEvent
-
-        const event: ModelStreamEvent = {
+        events.push({
           type: 'modelContentBlockStopEvent',
-        }
-
-        if (data.contentBlockIndex) {
-          event.contentBlockIndex = data.contentBlockIndex
-        }
-
-        events.push(event)
+          contentBlockIndex: ensureDefined(data.contentBlockIndex, 'contentBlockStop.contentBlockIndex'),
+        })
         break
       }
 
@@ -675,16 +778,8 @@ export class BedrockModel extends Model<BedrockModelConfig> {
           type: 'modelMessageStopEvent',
         }
 
-        const stopReason = ensureDefined(data.stopReason, 'messageStop.stopReason') as string
-        let mappedStopReason: string
-        if (stopReason in STOP_REASON_MAP) {
-          mappedStopReason = STOP_REASON_MAP[stopReason as keyof typeof STOP_REASON_MAP]
-        } else {
-          console.warn(`Unknown stop reason: "${stopReason}". Converting to camelCase: "${snakeToCamel(stopReason)}"`)
-          mappedStopReason = snakeToCamel(stopReason)
-        }
-
-        event.stopReason = mappedStopReason
+        const stopReasonRaw = ensureDefined(data.stopReason, 'messageStop.stopReason') as string
+        event.stopReason = this._transformStopReason(stopReasonRaw, data)
 
         if (data.additionalModelResponseFields) {
           event.additionalModelResponseFields = data.additionalModelResponseFields
@@ -747,5 +842,36 @@ export class BedrockModel extends Model<BedrockModelConfig> {
     }
 
     return events
+  }
+
+  /**
+   * Transforms a Bedrock stop reason into the SDK's format.
+   *
+   * @param stopReasonRaw - The raw stop reason string from Bedrock.
+   * @param event - The full event output, used to check for tool_use adjustments.
+   * @returns The transformed stop reason string.
+   */
+  private _transformStopReason(stopReasonRaw: string, event?: ConverseCommandOutput | BedrockMessageStopEvent): string {
+    let mappedStopReason: string
+
+    if (stopReasonRaw in STOP_REASON_MAP) {
+      mappedStopReason = STOP_REASON_MAP[stopReasonRaw as keyof typeof STOP_REASON_MAP]
+    } else {
+      console.warn(`Unknown stop reason: "${stopReasonRaw}". Converting to camelCase: "${snakeToCamel(stopReasonRaw)}"`)
+      mappedStopReason = snakeToCamel(stopReasonRaw)
+    }
+
+    // Adjust for tool_use, which is sometimes incorrectly reported as end_turn
+    if (
+      mappedStopReason === 'endTurn' &&
+      event &&
+      'output' in event &&
+      event.output?.message?.content?.some((block) => 'toolUse' in block)
+    ) {
+      mappedStopReason = 'toolUse'
+      console.warn(`Adjusting stop reason from 'end_turn' to 'tool_use' due to tool use in content blocks.`)
+    }
+
+    return mappedStopReason
   }
 }

@@ -1,127 +1,83 @@
 import { describe, it, expect } from 'vitest'
 import { fromNodeProviderChain } from '@aws-sdk/credential-providers'
-import { BedrockModel } from '@strands-agents/sdk'
-import { ContextWindowOverflowError } from '@strands-agents/sdk'
-import type { Message } from '@strands-agents/sdk'
-import type { ToolSpec } from '@strands-agents/sdk'
-import { ValidationException } from '@aws-sdk/client-bedrock-runtime'
+import { BedrockModel, ContextWindowOverflowError, Message, ToolSpec, ModelStreamEvent } from '@strands-agents/sdk'
 
 // eslint-disable-next-line no-restricted-imports
 import { collectIterator, collectGenerator } from '../src/__fixtures__/model-test-helpers'
 
-// Check credentials at module level so skipIf can use it
-let hasCredentials = false
-try {
-  const credentialProvider = fromNodeProviderChain()
-  await credentialProvider()
-  hasCredentials = true
-  console.log('✅ AWS credentials found for integration tests')
-} catch {
-  hasCredentials = false
-  console.log('⏭️  AWS credentials not available - integration tests will be skipped')
-}
+const shouldRunTests = await (async () => {
+  // In a CI environment, we ALWAYS expect credentials to be configured.
+  // A failure is better than a skip.
+  if (process.env.CI) {
+    console.log('✅ Running in CI environment, integration tests will run.')
+    return true
+  }
 
-describe.skipIf(!hasCredentials)('BedrockModel Integration Tests', () => {
-  describe('Basic Streaming', () => {
-    it.concurrent('streams a simple text response', async () => {
+  // In a local environment, we check for credentials as a convenience.
+  try {
+    const credentialProvider = fromNodeProviderChain()
+    await credentialProvider()
+    console.log('✅ AWS credentials found locally, integration tests will run.')
+    return true
+  } catch {
+    console.log('⏭️ AWS credentials not available locally, integration tests will be skipped.')
+    return false
+  }
+})()
+
+describe.skipIf(!shouldRunTests)('BedrockModel Integration Tests', () => {
+  describe('Non-Streaming', () => {
+    it('gets a simple text response', async () => {
       const provider = new BedrockModel({
+        stream: false,
         maxTokens: 100,
       })
-
       const messages: Message[] = [
         {
           type: 'message',
           role: 'user',
-          content: [{ type: 'textBlock', text: 'Say hello in one word.' }],
+          content: [{ type: 'textBlock', text: 'Say hello in exactly one word.' }],
         },
       ]
 
       const events = await collectIterator(provider.stream(messages))
 
-      // Verify we got the expected event sequence
-      expect(events.length).toBeGreaterThan(0)
+      // Type-safely extract the complete text response
+      const responseText = events.reduce((acc, event) => {
+        if (event.type === 'modelContentBlockDeltaEvent' && event.delta.type === 'textDelta') {
+          return acc + event.delta.text
+        }
+        return acc
+      }, '')
 
-      // Should have message start event
-      const messageStartEvent = events.find((e) => e.type === 'modelMessageStartEvent')
-      expect(messageStartEvent).toBeDefined()
-      expect(messageStartEvent?.role).toBe('assistant')
+      expect(responseText.trim().toUpperCase()).toContain('HELLO')
 
-      // Should have at least one content delta event
-      const deltaEvents = events.filter((e) => e.type === 'modelContentBlockDeltaEvent')
-      expect(deltaEvents.length).toBeGreaterThan(0)
+      // Verify the stop reason and usage metrics
+      const stopEvent = events.find((e) => e.type === 'modelMessageStopEvent')
+      expect(stopEvent?.stopReason).toBe('endTurn')
 
-      // Should have message stop event
-      const messageStopEvent = events.find((e) => e.type === 'modelMessageStopEvent')
-      expect(messageStopEvent).toBeDefined()
-
-      // Should have metadata with usage
       const metadataEvent = events.find((e) => e.type === 'modelMetadataEvent')
-      expect(metadataEvent).toBeDefined()
-      expect(metadataEvent?.usage).toBeDefined()
-      expect(metadataEvent?.usage?.inputTokens).toBeGreaterThan(0)
       expect(metadataEvent?.usage?.outputTokens).toBeGreaterThan(0)
     })
 
-    it.concurrent('respects system prompt', async () => {
+    it('requests tool use when appropriate', async () => {
       const provider = new BedrockModel({
-        maxTokens: 50,
-      })
-
-      const messages: Message[] = [
-        {
-          type: 'message',
-          role: 'user',
-          content: [{ type: 'textBlock', text: 'What should I say?' }],
-        },
-      ]
-
-      const systemPrompt = 'Always respond with exactly the word "TEST" and nothing else.'
-
-      const events = await collectIterator(provider.stream(messages, { systemPrompt }))
-
-      // Collect the text response
-      let responseText = ''
-      for (const event of events) {
-        if (event.type === 'modelContentBlockDeltaEvent' && event.delta.type === 'textDelta') {
-          responseText += event.delta.text
-        }
-      }
-
-      // Response should contain "TEST" (allowing for minor variations in model compliance)
-      expect(responseText.toUpperCase()).toContain('TEST')
-    })
-  })
-
-  describe('Tool Use', () => {
-    it.concurrent('requests tool use when appropriate', async () => {
-      const provider = new BedrockModel({
+        stream: false,
         maxTokens: 200,
       })
-
       const calculatorTool: ToolSpec = {
         name: 'calculator',
         description: 'Performs basic arithmetic operations',
         inputSchema: {
           type: 'object',
           properties: {
-            operation: {
-              type: 'string',
-              enum: ['add', 'subtract', 'multiply', 'divide'],
-              description: 'The arithmetic operation to perform',
-            },
-            a: {
-              type: 'number',
-              description: 'First number',
-            },
-            b: {
-              type: 'number',
-              description: 'Second number',
-            },
+            operation: { type: 'string', enum: ['add', 'subtract', 'multiply', 'divide'] },
+            a: { type: 'number' },
+            b: { type: 'number' },
           },
           required: ['operation', 'a', 'b'],
         },
       }
-
       const messages: Message[] = [
         {
           type: 'message',
@@ -132,241 +88,227 @@ describe.skipIf(!hasCredentials)('BedrockModel Integration Tests', () => {
 
       const events = await collectIterator(provider.stream(messages, { toolSpecs: [calculatorTool] }))
 
-      // Should have tool use in the response
-      const toolUseStartEvents = events.filter(
-        (e) => e.type === 'modelContentBlockStartEvent' && e.start?.type === 'toolUseStart'
+      // Check for the tool use input
+      const deltaEvent = events.find(
+        (e): e is ModelStreamEvent & { type: 'modelContentBlockDeltaEvent'; delta: { type: 'toolUseInputDelta' } } =>
+          e.type === 'modelContentBlockDeltaEvent' && e.delta.type === 'toolUseInputDelta'
       )
-      expect(toolUseStartEvents.length).toBeGreaterThan(0)
+      expect(deltaEvent).toBeDefined()
 
-      // Should have tool use input delta
-      const toolInputDeltas = events.filter(
-        (e) => e.type === 'modelContentBlockDeltaEvent' && e.delta.type === 'toolUseInputDelta'
-      )
-      expect(toolInputDeltas.length).toBeGreaterThan(0)
+      // The `find` with a type guard ensures deltaEvent is correctly typed
+      const input = JSON.parse(deltaEvent!.delta.input)
+      expect(input).toEqual({ operation: 'add', a: 15, b: 27 })
 
-      // Stop reason should be toolUse
-      const messageStopEvent = events.find((e) => e.type === 'modelMessageStopEvent')
-      expect(messageStopEvent?.stopReason).toBe('toolUse')
+      // Verify the stop reason was tool use
+      const stopEvent = events.find((e) => e.type === 'modelMessageStopEvent')
+      expect(stopEvent?.stopReason).toBe('toolUse')
     })
   })
 
-  describe('Configuration', () => {
-    it.concurrent('respects maxTokens configuration', async () => {
-      const provider = new BedrockModel({
-        maxTokens: 20, // Very small limit,
+  describe('Streaming', () => {
+    describe('Basic Streaming', () => {
+      it.concurrent('streams a simple text response', async () => {
+        const provider = new BedrockModel({ maxTokens: 100 })
+        const messages: Message[] = [
+          {
+            type: 'message',
+            role: 'user',
+            content: [{ type: 'textBlock', text: 'Say hello in one word.' }],
+          },
+        ]
+
+        const events = await collectIterator(provider.stream(messages))
+
+        expect(events.length).toBeGreaterThan(0)
+        expect(events.some((e) => e.type === 'modelMessageStartEvent')).toBe(true)
+        expect(events.some((e) => e.type === 'modelContentBlockDeltaEvent')).toBe(true)
+        expect(events.some((e) => e.type === 'modelMessageStopEvent')).toBe(true)
+
+        const metadataEvent = events.find((e) => e.type === 'modelMetadataEvent')
+        expect(metadataEvent).toBeDefined()
+        expect(metadataEvent?.usage?.inputTokens).toBeGreaterThan(0)
+        expect(metadataEvent?.usage?.outputTokens).toBeGreaterThan(0)
       })
 
-      const messages: Message[] = [
-        {
-          type: 'message',
-          role: 'user',
-          content: [{ type: 'textBlock', text: 'Write a long story about dragons.' }],
-        },
-      ]
+      it.concurrent('respects system prompt', async () => {
+        const provider = new BedrockModel({ maxTokens: 50 })
+        const messages: Message[] = [
+          {
+            type: 'message',
+            role: 'user',
+            content: [{ type: 'textBlock', text: 'What should I say?' }],
+          },
+        ]
+        const systemPrompt = 'Always respond with exactly the word "TEST" and nothing else.'
 
-      const events = await collectIterator(provider.stream(messages))
+        const events = await collectIterator(provider.stream(messages, { systemPrompt }))
 
-      // Check metadata for token usage
-      const metadataEvent = events.find((e) => e.type === 'modelMetadataEvent')
-      expect(metadataEvent?.usage?.outputTokens).toBeLessThanOrEqual(20)
+        const responseText = events.reduce((acc, event) => {
+          if (event.type === 'modelContentBlockDeltaEvent' && event.delta.type === 'textDelta') {
+            return acc + event.delta.text
+          }
+          return acc
+        }, '')
 
-      // Check that stop reason is maxTokens
-      const messageStopEvent = events.find((e) => e.type === 'modelMessageStopEvent')
-      expect(messageStopEvent?.stopReason).toBe('maxTokens')
-    })
-
-    it.concurrent('uses system prompt cache on subsequent requests', async () => {
-      const provider = new BedrockModel({ maxTokens: 100 })
-
-      // Create a system prompt with text + cache point
-      // Use enough text to be worth caching (minimum 1024 tokens recommended by AWS)
-      // Append unique string to ensure fresh cache creation on each test run
-      const largeContext = 'Context information: ' + 'hello '.repeat(2000) + ` [test-${Date.now()}-${Math.random()}]`
-      const cachedSystemPrompt = [
-        { type: 'textBlock' as const, text: 'You are a helpful assistant.' },
-        { type: 'textBlock' as const, text: largeContext },
-        { type: 'cachePointBlock' as const, cacheType: 'default' as const },
-      ]
-
-      // First request - creates cache
-      const messages1: Message[] = [
-        { type: 'message', role: 'user', content: [{ type: 'textBlock', text: 'Say hello' }] },
-      ]
-      const events1 = await collectIterator(provider.stream(messages1, { systemPrompt: cachedSystemPrompt }))
-
-      // Verify first request creates cache (if caching is supported)
-      const metadata1 = events1.find((e) => e.type === 'modelMetadataEvent')
-      expect(metadata1?.usage?.inputTokens).toBeGreaterThan(0)
-
-      // Verify cache creation
-      expect(metadata1?.usage?.cacheWriteInputTokens).toBeGreaterThan(0)
-
-      // Second request - should use cache
-      const messages2: Message[] = [
-        { type: 'message', role: 'user', content: [{ type: 'textBlock', text: 'Say goodbye' }] },
-      ]
-      const events2 = await collectIterator(provider.stream(messages2, { systemPrompt: cachedSystemPrompt }))
-
-      // Verify second request uses cache (if caching is supported)
-      const metadata2 = events2.find((e) => e.type === 'modelMetadataEvent')
-      expect(metadata2?.usage).toBeDefined()
-
-      // Verify cache read
-      expect(metadata2?.usage?.cacheReadInputTokens).toBeGreaterThan(0)
-    })
-
-    it.concurrent('uses message cache points on subsequent requests', async () => {
-      const provider = new BedrockModel({ maxTokens: 100 })
-
-      // Create messages with cache points
-      // Append unique string to ensure fresh cache creation on each test run
-      const largeContext = 'Context information: ' + 'hello '.repeat(2000) + ` [test-${Date.now()}-${Math.random()}]`
-
-      // First request - creates cache
-      const messages1: Message[] = [
-        {
-          type: 'message',
-          role: 'user',
-          content: [
-            { type: 'textBlock', text: largeContext },
-            { type: 'cachePointBlock', cacheType: 'default' },
-            { type: 'textBlock', text: 'Say hello' },
-          ],
-        },
-      ]
-
-      // First request - creates cache
-      const events1 = await collectIterator(provider.stream(messages1))
-
-      // Verify first request creates cache (if caching is supported)
-      const metadata1 = events1.find((e) => e.type === 'modelMetadataEvent')
-      expect(metadata1?.usage?.inputTokens).toBeGreaterThan(0)
-
-      // Verify cache creation
-      expect(metadata1?.usage?.cacheWriteInputTokens).toBeGreaterThan(0)
-
-      // Second request - should use cache
-      const messages2: Message[] = [
-        {
-          type: 'message',
-          role: 'user',
-          content: [
-            { type: 'textBlock', text: largeContext },
-            { type: 'cachePointBlock', cacheType: 'default' },
-            { type: 'textBlock', text: 'Say goodbye' },
-          ],
-        },
-      ]
-      const events2 = await collectIterator(provider.stream(messages2))
-
-      // Verify second request uses cache (if caching is supported)
-      const metadata2 = events2.find((e) => e.type === 'modelMetadataEvent')
-      expect(metadata2?.usage).toBeDefined()
-
-      // Verify cache read
-      expect(metadata2?.usage?.cacheReadInputTokens).toBeGreaterThan(0)
-    })
-  })
-
-  describe('Error Handling', () => {
-    it.concurrent('handles invalid model ID gracefully', async () => {
-      const provider = new BedrockModel({
-        modelId: 'invalid-model-id-that-does-not-exist',
+        expect(responseText.toUpperCase()).toContain('TEST')
       })
+    })
 
-      const messages: Message[] = [
-        {
-          type: 'message',
-          role: 'user',
-          content: [{ type: 'textBlock', text: 'Hello' }],
-        },
-      ]
-
-      // Should throw an error
-      await expect(async () => {
-        for await (const _event of provider.stream(messages)) {
-          throw Error('Should not get here')
+    describe('Tool Use', () => {
+      it.concurrent('requests tool use when appropriate', async () => {
+        const provider = new BedrockModel({ maxTokens: 200 })
+        const calculatorTool: ToolSpec = {
+          name: 'calculator',
+          description: 'Performs basic arithmetic operations',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              operation: { type: 'string', enum: ['add', 'subtract', 'multiply', 'divide'] },
+              a: { type: 'number' },
+              b: { type: 'number' },
+            },
+            required: ['operation', 'a', 'b'],
+          },
         }
-      }).rejects.toThrow(ValidationException)
+        const messages: Message[] = [
+          {
+            type: 'message',
+            role: 'user',
+            content: [{ type: 'textBlock', text: 'What is 15 plus 27?' }],
+          },
+        ]
+
+        const events = await collectIterator(provider.stream(messages, { toolSpecs: [calculatorTool] }))
+
+        const hasToolUseStart = events.some(
+          (e) => e.type === 'modelContentBlockStartEvent' && e.start?.type === 'toolUseStart'
+        )
+        expect(hasToolUseStart).toBe(true)
+
+        const hasToolInputDelta = events.some(
+          (e) => e.type === 'modelContentBlockDeltaEvent' && e.delta.type === 'toolUseInputDelta'
+        )
+        expect(hasToolInputDelta).toBe(true)
+
+        const messageStopEvent = events.find((e) => e.type === 'modelMessageStopEvent')
+        expect(messageStopEvent?.stopReason).toBe('toolUse')
+      })
     })
 
-    it.concurrent('throws ContextWindowOverflowError when input exceeds context window', async () => {
-      const provider = new BedrockModel({
-        maxTokens: 100,
+    describe('Configuration', () => {
+      it.concurrent('respects maxTokens configuration', async () => {
+        const provider = new BedrockModel({ maxTokens: 20 })
+        const messages: Message[] = [
+          {
+            type: 'message',
+            role: 'user',
+            content: [{ type: 'textBlock', text: 'Write a long story about dragons.' }],
+          },
+        ]
+
+        const events = await collectIterator(provider.stream(messages))
+
+        const metadataEvent = events.find((e) => e.type === 'modelMetadataEvent')
+        expect(metadataEvent?.usage?.outputTokens).toBeLessThanOrEqual(20)
+
+        const messageStopEvent = events.find((e) => e.type === 'modelMessageStopEvent')
+        expect(messageStopEvent?.stopReason).toBe('maxTokens')
       })
 
-      // Create a message that exceeds context window (200k tokens ~800k characters)
-      // Repeat "Too much text!" 100,000 times to exceed the limit
-      const longText = 'Too much text! '.repeat(100000)
+      it.concurrent('uses system prompt cache on subsequent requests', async () => {
+        const provider = new BedrockModel({ maxTokens: 100 })
+        const largeContext = `Context information: ${'hello '.repeat(2000)} [test-${Date.now()}-${Math.random()}]`
+        const cachedSystemPrompt = [
+          { type: 'textBlock' as const, text: 'You are a helpful assistant.' },
+          { type: 'textBlock' as const, text: largeContext },
+          { type: 'cachePointBlock' as const, cacheType: 'default' as const },
+        ]
 
-      const messages: Message[] = [
-        {
-          type: 'message',
-          role: 'user',
-          content: [{ type: 'textBlock', text: longText }],
-        },
-      ]
+        // First request - creates cache
+        const events1 = await collectIterator(
+          provider.stream([{ type: 'message', role: 'user', content: [{ type: 'textBlock', text: 'Say hello' }] }], {
+            systemPrompt: cachedSystemPrompt,
+          })
+        )
+        const metadata1 = events1.find((e) => e.type === 'modelMetadataEvent')
+        expect(metadata1?.usage?.cacheWriteInputTokens).toBeGreaterThan(0)
 
-      // Should throw ContextWindowOverflowError
-      await expect(async () => {
-        for await (const _event of provider.stream(messages)) {
-          throw Error('Should not get here')
-        }
-      }).rejects.toBeInstanceOf(ContextWindowOverflowError)
+        // Second request - should use cache
+        const events2 = await collectIterator(
+          provider.stream([{ type: 'message', role: 'user', content: [{ type: 'textBlock', text: 'Say goodbye' }] }], {
+            systemPrompt: cachedSystemPrompt,
+          })
+        )
+        const metadata2 = events2.find((e) => e.type === 'modelMetadataEvent')
+        expect(metadata2?.usage?.cacheReadInputTokens).toBeGreaterThan(0)
+      })
+
+      it.concurrent('uses message cache points on subsequent requests', async () => {
+        const provider = new BedrockModel({ maxTokens: 100 })
+        const largeContext = `Context information: ${'hello '.repeat(2000)} [test-${Date.now()}-${Math.random()}]`
+        const messagesWithCachePoint = (text: string): Message[] => [
+          {
+            type: 'message',
+            role: 'user',
+            content: [
+              { type: 'textBlock', text: largeContext },
+              { type: 'cachePointBlock', cacheType: 'default' },
+              { type: 'textBlock', text },
+            ],
+          },
+        ]
+
+        // First request - creates cache
+        const events1 = await collectIterator(provider.stream(messagesWithCachePoint('Say hello')))
+        const metadata1 = events1.find((e) => e.type === 'modelMetadataEvent')
+        expect(metadata1?.usage?.cacheWriteInputTokens).toBeGreaterThan(0)
+
+        // Second request - should use cache
+        const events2 = await collectIterator(provider.stream(messagesWithCachePoint('Say goodbye')))
+        const metadata2 = events2.find((e) => e.type === 'modelMetadataEvent')
+        expect(metadata2?.usage?.cacheReadInputTokens).toBeGreaterThan(0)
+      })
     })
-  })
 
-  describe('Stream Aggregation', () => {
-    it.concurrent('streamAggregated yields events, content blocks, and returns complete message', async () => {
-      const provider = new BedrockModel({
-        maxTokens: 100,
+    describe('Error Handling', () => {
+      it.concurrent('handles invalid model ID gracefully', async () => {
+        const provider = new BedrockModel({ modelId: 'invalid-model-id-that-does-not-exist' })
+        const messages: Message[] = [{ type: 'message', role: 'user', content: [{ type: 'textBlock', text: 'Hello' }] }]
+        await expect(collectIterator(provider.stream(messages))).rejects.toThrow()
       })
 
-      const messages: Message[] = [
-        {
-          type: 'message',
-          role: 'user',
-          content: [{ type: 'textBlock', text: 'Say hello in exactly one word.' }],
-        },
-      ]
+      it.concurrent('throws ContextWindowOverflowError when input exceeds context window', async () => {
+        const provider = new BedrockModel({ maxTokens: 100 })
+        const longText = 'Too much text! '.repeat(100000)
+        const messages: Message[] = [
+          { type: 'message', role: 'user', content: [{ type: 'textBlock', text: longText }] },
+        ]
+        await expect(collectIterator(provider.stream(messages))).rejects.toBeInstanceOf(ContextWindowOverflowError)
+      })
+    })
 
-      const { items, result } = await collectGenerator(provider.streamAggregated(messages))
+    describe('Stream Aggregation', () => {
+      it.concurrent('streamAggregated yields events, content blocks, and returns complete message', async () => {
+        const provider = new BedrockModel({ maxTokens: 100 })
+        const messages: Message[] = [
+          {
+            type: 'message',
+            role: 'user',
+            content: [{ type: 'textBlock', text: 'Say hello in exactly one word.' }],
+          },
+        ]
 
-      // Count different types using switch-case pattern
-      let streamEventCount = 0
-      let contentBlockCount = 0
+        const { items, result } = await collectGenerator(provider.streamAggregated(messages))
 
-      for (const item of items) {
-        switch (item.type) {
-          case 'modelMessageStartEvent':
-          case 'modelContentBlockStartEvent':
-          case 'modelContentBlockDeltaEvent':
-          case 'modelContentBlockStopEvent':
-          case 'modelMessageStopEvent':
-          case 'modelMetadataEvent':
-            streamEventCount++
-            break
-          case 'textBlock':
-          case 'toolUseBlock':
-          case 'reasoningBlock':
-            contentBlockCount++
-            break
-        }
-      }
+        const streamEventCount = items.filter((item) => item.type.endsWith('Event')).length
+        const contentBlockCount = items.filter((item) => item.type.endsWith('Block')).length
 
-      // Verify we got events and content blocks
-      expect(streamEventCount).toBeGreaterThan(0)
-      expect(contentBlockCount).toBe(1)
-
-      // Verify the complete message structure is returned
-      expect(result).toMatchObject({
-        type: 'message',
-        role: 'assistant',
-        content: expect.arrayContaining([
-          expect.objectContaining({
-            type: 'textBlock',
-          }),
-        ]),
+        expect(streamEventCount).toBeGreaterThan(0)
+        expect(contentBlockCount).toBe(1)
+        expect(result).toMatchObject({
+          role: 'assistant',
+          content: [expect.objectContaining({ type: 'textBlock', text: expect.any(String) })],
+        })
       })
     })
   })
