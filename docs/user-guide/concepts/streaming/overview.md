@@ -31,8 +31,8 @@ All streaming methods yield the same set of events:
     - `toolUseId`: Unique ID for this tool use
     - `name`: Name of the tool
     - `input`: Tool input parameters (accumulated as streaming occurs)
-- `tool_stream_event`: Information about [an event streamed from a tool](../../tools/python-tools/#tool-streaming), including:
-    - `tool_use`: The [`ToolUse`](../../../api-reference/types#strands.types.tools.ToolUse) for the tool that streamed the event
+- `tool_stream_event`: Information about [an event streamed from a tool](../tools/python-tools.md#tool-streaming), including:
+    - `tool_use`: The [`ToolUse`](../../../api-reference/types.md#strands.types.tools.ToolUse) for the tool that streamed the event
     - `data`: The data streamed from the tool
 
 ### Reasoning Events
