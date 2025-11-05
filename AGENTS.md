@@ -720,7 +720,9 @@ For detailed command usage, see [CONTRIBUTING.md - Testing Instructions](CONTRIB
 
 Quick reference:
 ```bash
-npm test              # Run unit tests
+npm test              # Run unit tests in Node.js
+npm run test:browser  # Run unit tests in browser (Chromium via Playwright)
+npm run test:all      # Run all tests in all environments
 npm run test:integ    # Run integration tests  
 npm run test:coverage # Run tests with coverage report
 npm run lint          # Check code quality
@@ -729,23 +731,38 @@ npm run type-check    # Verify TypeScript types
 npm run build         # Compile TypeScript
 ```
 
+## Multi-Environment Testing
+
+The SDK is designed to work seamlessly in both Node.js and browser environments. Our test suite validates this by running tests in both environments using Vitest's browser mode with Playwright.
+
+### Test Projects
+
+The test suite is organized into three projects:
+
+1. **unit-node** (green): Unit tests running in Node.js environment
+2. **unit-browser** (cyan): Same unit tests running in Chromium browser
+3. **integ** (magenta): Integration tests running in Node.js
+
+### Environment-Specific Test Patterns
+
+- You MUST write tests that are environment-agnostic unless they depend on Node.js features like filesystem or env-vars
+
+Some tests require Node.js-specific features (like process.env, AWS SDK) and should be skipped in browser environments:
+
+```typescript
+import { describe, it, expect } from 'vitest'
+import { isNode } from '../__fixtures__/environment'
+
+// Tests will run in Node.js, skip in browser
+describe.skipIf(!isNode)("Node.js specific features", () => {
+  it("uses environment variables", () => {
+    // This test accesses process.env
+    expect(process.env.NODE_ENV).toBeDefined()
+  })
+})
+```
+
 ## Troubleshooting Common Issues
-
-### Tests Not Found
-
-If tests aren't discovered:
-1. Ensure unit tests are in `src/__tests__/*.test.ts`
-2. Ensure integration tests are in `tests_integ/*.test.ts`
-3. Check `vitest.config.ts` configuration
-
-### Pre-commit Hooks Failing
-
-If hooks fail:
-1. Run the failing command manually to see details
-2. Fix the issues (tests, linting, formatting, or type errors)
-3. Try committing again
-
-### Type Errors
 
 If TypeScript compilation fails:
 1. Run `npm run type-check` to see all type errors

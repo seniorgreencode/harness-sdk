@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { BedrockRuntimeClient } from '@aws-sdk/client-bedrock-runtime'
+import { isNode } from '../../__fixtures__/environment'
 import { BedrockModel } from '../bedrock'
 import { ContextWindowOverflowError } from '../../errors'
 import type { Message } from '../../types/messages'
@@ -88,7 +89,10 @@ vi.mock('@aws-sdk/client-bedrock-runtime', async (importOriginal) => {
 describe('BedrockModel', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    delete process.env.AWS_REGION
+    // Clean up AWS_REGION env var in Node.js only
+    if (isNode && process.env) {
+      delete process.env.AWS_REGION
+    }
   })
 
   afterEach(() => {
