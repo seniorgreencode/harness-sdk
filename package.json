@@ -21,6 +21,10 @@
     "./bedrock": {
       "import": "./dist/models/bedrock.js",
       "types": "./dist/models/bedrock.d.ts"
+    },
+    "./vended_tools/notebook": {
+      "import": "./dist/vended_tools/notebook/index.js",
+      "types": "./dist/vended_tools/notebook/index.d.ts"
     }
   },
   "scripts": {
@@ -37,10 +41,10 @@
     "test:all": "vitest run --project unit-node --project unit-browser",
     "test:all:coverage": "vitest run --coverage --project unit-node --project unit-browser",
     "test:package": "npm run build && cd test-package && npm install && node verify.js",
-    "lint": "eslint src tests_integ",
-    "lint:fix": "eslint src tests_integ --fix",
-    "format": "prettier --write src tests_integ",
-    "format:check": "prettier --check src tests_integ",
+    "lint": "eslint src tests_integ vended_tools",
+    "lint:fix": "eslint src tests_integ vended_tools --fix",
+    "format": "prettier --write src tests_integ vended_tools",
+    "format:check": "prettier --check src tests_integ vended_tools",
     "type-check": "tsc --noEmit",
     "type-check:watch": "tsc --noEmit --watch",
     "prepare": "npm run build && husky"

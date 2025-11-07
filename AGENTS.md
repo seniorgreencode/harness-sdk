@@ -52,6 +52,16 @@ sdk-typescript/
 │   ├── errors.ts                 # Custom error classes
 │   └── index.ts                  # Main SDK entry point (single export point)
 │
+├── vended_tools/                  # Optional vended tools (not part of core SDK)
+│   ├── notebook/                 # Notebook tool for managing text notebooks
+│   │   ├── __tests__/            # Unit tests for notebook tool
+│   │   │   └── notebook.test.ts
+│   │   ├── notebook.ts           # Notebook implementation
+│   │   ├── types.ts              # Notebook type definitions
+│   │   ├── index.ts              # Public exports for notebook tool
+│   │   └── README.md             # Notebook tool documentation
+│   └── README.md                 # Vended tools overview
+│
 ├── tests_integ/                  # Integration tests (separate from source)
 │   ├── bedrock.test.ts           # Bedrock integration tests (requires AWS credentials)
 │   └── registry.test.ts          # ToolRegistry integration tests
@@ -94,6 +104,7 @@ sdk-typescript/
 - **`src/models/`**: Model provider implementations (Bedrock, future providers)
 - **`src/tools/`**: Tool definitions and types for agent tool use
 - **`src/types/`**: Core type definitions used across the SDK
+- **`vended_tools/`**: Optional vended tools (not part of core SDK, independently importable)
 - **`tests_integ/`**: Integration tests (tests public API and external integrations)
 - **`.github/workflows/`**: CI/CD automation and quality gates
 - **`.project/`**: Task management and project tracking

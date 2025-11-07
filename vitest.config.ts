@@ -5,7 +5,7 @@ export default defineConfig({
     projects: [
       {
         test: {
-          include: ['src/**/__tests__/**/*.test.ts'],
+          include: ['src/**/__tests__/**/*.test.ts', 'vended_tools/**/__tests__/**/*.test.ts'],
           includeSource: ['src/**/*.{js,ts}'],
           name: { label: 'unit-node', color: 'green' },
           typecheck: {
@@ -16,7 +16,7 @@ export default defineConfig({
       },
       {
         test: {
-          include: ['src/**/__tests__/**/*.test.ts'],
+          include: ['src/**/__tests__/**/*.test.ts', 'vended_tools/**/__tests__/**/*.test.ts'],
           name: { label: 'unit-browser', color: 'cyan' },
           browser: {
             enabled: true,
@@ -47,8 +47,8 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
-      include: ['src/**/*'],
-      exclude: ['src/**/__tests__/**', 'src/**/__fixtures__/**'],
+      include: ['src/**/*', 'vended_tools/**/*'],
+      exclude: ['src/**/__tests__/**', 'src/**/__fixtures__/**', 'vended_tools/**/__tests__/**'],
       thresholds: {
         lines: 80,
         functions: 80,
