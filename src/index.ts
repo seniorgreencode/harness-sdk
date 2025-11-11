@@ -42,10 +42,17 @@ export type {
 export { TextBlock, ToolUseBlock, ToolResultBlock, ReasoningBlock, CachePointBlock, Message } from './types/messages.js'
 
 // Tool types
-export type { ToolSpec, ToolUse, ToolResultStatus, ToolResult, ToolChoice } from './tools/types.js'
+export type { ToolSpec, ToolUse, ToolResultStatus, ToolChoice } from './tools/types.js'
 
 // Tool interface and related types
-export type { Tool, InvokableTool, ToolContext, ToolStreamEvent, ToolStreamGenerator } from './tools/tool.js'
+export type {
+  Tool,
+  InvokableTool,
+  ToolContext,
+  ToolStreamEventData,
+  ToolStreamEvent,
+  ToolStreamGenerator,
+} from './tools/tool.js'
 
 // FunctionTool implementation
 export { FunctionTool } from './tools/function-tool.js'
