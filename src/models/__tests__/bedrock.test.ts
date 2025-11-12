@@ -4,6 +4,7 @@ import { isNode } from '../../__fixtures__/environment.js'
 import { BedrockModel } from '../bedrock.js'
 import { ContextWindowOverflowError } from '../../errors.js'
 import type { Message } from '../../types/messages.js'
+import { TextBlock, GuardContentBlock, CachePointBlock } from '../../types/messages.js'
 import type { StreamOptions } from '../model.js'
 import { collectIterator } from '../../__fixtures__/model-test-helpers.js'
 
@@ -1098,6 +1099,255 @@ describe('BedrockModel', () => {
           {
             role: 'user',
             content: [{ text: 'Hello' }],
+          },
+        ],
+      })
+    })
+
+    it('formats array system prompt with guard content', async () => {
+      const provider = new BedrockModel()
+      const messages: Message[] = [{ type: 'message', role: 'user', content: [{ type: 'textBlock', text: 'Hello' }] }]
+      const options: StreamOptions = {
+        systemPrompt: [
+          new TextBlock('You are a helpful assistant'),
+          new GuardContentBlock({
+            text: {
+              qualifiers: ['grounding_source'],
+              text: 'This content should be evaluated for grounding.',
+            },
+          }),
+        ],
+      }
+
+      collectIterator(provider.stream(messages, options))
+
+      expect(mockConverseStreamCommand).toHaveBeenLastCalledWith({
+        modelId: 'global.anthropic.claude-sonnet-4-5-20250929-v1:0',
+        messages: [
+          {
+            role: 'user',
+            content: [{ text: 'Hello' }],
+          },
+        ],
+        system: [
+          { text: 'You are a helpful assistant' },
+          {
+            guardContent: {
+              text: {
+                text: 'This content should be evaluated for grounding.',
+                qualifiers: ['grounding_source'],
+              },
+            },
+          },
+        ],
+      })
+    })
+
+    it('formats mixed system prompt with text, guard content, and cache points', async () => {
+      const provider = new BedrockModel()
+      const messages: Message[] = [{ type: 'message', role: 'user', content: [{ type: 'textBlock', text: 'Hello' }] }]
+      const options: StreamOptions = {
+        systemPrompt: [
+          new TextBlock('You are a helpful assistant'),
+          new GuardContentBlock({
+            text: {
+              qualifiers: ['grounding_source', 'query'],
+              text: 'Guard content',
+            },
+          }),
+          new TextBlock('Additional context'),
+          new CachePointBlock({ cacheType: 'default' }),
+        ],
+      }
+
+      collectIterator(provider.stream(messages, options))
+
+      expect(mockConverseStreamCommand).toHaveBeenLastCalledWith({
+        modelId: 'global.anthropic.claude-sonnet-4-5-20250929-v1:0',
+        messages: [
+          {
+            role: 'user',
+            content: [{ text: 'Hello' }],
+          },
+        ],
+        system: [
+          { text: 'You are a helpful assistant' },
+          {
+            guardContent: {
+              text: {
+                text: 'Guard content',
+                qualifiers: ['grounding_source', 'query'],
+              },
+            },
+          },
+          { text: 'Additional context' },
+          { cachePoint: { type: 'default' } },
+        ],
+      })
+    })
+
+    it('formats guard content with all qualifier types', async () => {
+      const provider = new BedrockModel()
+      const messages: Message[] = [{ type: 'message', role: 'user', content: [{ type: 'textBlock', text: 'Hello' }] }]
+      const options: StreamOptions = {
+        systemPrompt: [
+          new GuardContentBlock({
+            text: {
+              qualifiers: ['grounding_source', 'query', 'guard_content'],
+              text: 'Multi-qualifier guard content',
+            },
+          }),
+        ],
+      }
+
+      collectIterator(provider.stream(messages, options))
+
+      expect(mockConverseStreamCommand).toHaveBeenLastCalledWith({
+        modelId: 'global.anthropic.claude-sonnet-4-5-20250929-v1:0',
+        messages: [
+          {
+            role: 'user',
+            content: [{ text: 'Hello' }],
+          },
+        ],
+        system: [
+          {
+            guardContent: {
+              text: {
+                text: 'Multi-qualifier guard content',
+                qualifiers: ['grounding_source', 'query', 'guard_content'],
+              },
+            },
+          },
+        ],
+      })
+    })
+
+    it('formats guard content with image in system prompt', async () => {
+      const provider = new BedrockModel()
+      const messages: Message[] = [{ type: 'message', role: 'user', content: [{ type: 'textBlock', text: 'Hello' }] }]
+      const imageBytes = new Uint8Array([1, 2, 3, 4])
+      const options: StreamOptions = {
+        systemPrompt: [
+          new GuardContentBlock({
+            image: {
+              format: 'jpeg',
+              source: { bytes: imageBytes },
+            },
+          }),
+        ],
+      }
+
+      collectIterator(provider.stream(messages, options))
+
+      expect(mockConverseStreamCommand).toHaveBeenLastCalledWith({
+        modelId: 'global.anthropic.claude-sonnet-4-5-20250929-v1:0',
+        messages: [
+          {
+            role: 'user',
+            content: [{ text: 'Hello' }],
+          },
+        ],
+        system: [
+          {
+            guardContent: {
+              image: {
+                format: 'jpeg',
+                source: { bytes: imageBytes },
+              },
+            },
+          },
+        ],
+      })
+    })
+  })
+
+  describe('guard content in messages', async () => {
+    const { ConverseStreamCommand } = await import('@aws-sdk/client-bedrock-runtime')
+    const mockConverseStreamCommand = vi.mocked(ConverseStreamCommand)
+
+    beforeEach(() => {
+      vi.clearAllMocks()
+    })
+
+    it('formats guard content with text in message', async () => {
+      const provider = new BedrockModel()
+      const messages: Message[] = [
+        {
+          type: 'message',
+          role: 'user',
+          content: [
+            new TextBlock('Verify this information:'),
+            new GuardContentBlock({
+              text: {
+                qualifiers: ['grounding_source'],
+                text: 'The capital of France is Paris.',
+              },
+            }),
+          ],
+        },
+      ]
+
+      collectIterator(provider.stream(messages))
+
+      expect(mockConverseStreamCommand).toHaveBeenLastCalledWith({
+        modelId: 'global.anthropic.claude-sonnet-4-5-20250929-v1:0',
+        messages: [
+          {
+            role: 'user',
+            content: [
+              { text: 'Verify this information:' },
+              {
+                guardContent: {
+                  text: {
+                    text: 'The capital of France is Paris.',
+                    qualifiers: ['grounding_source'],
+                  },
+                },
+              },
+            ],
+          },
+        ],
+      })
+    })
+
+    it('formats guard content with image in message', async () => {
+      const provider = new BedrockModel()
+      const imageBytes = new Uint8Array([1, 2, 3, 4])
+      const messages: Message[] = [
+        {
+          type: 'message',
+          role: 'user',
+          content: [
+            new TextBlock('Is this image safe?'),
+            new GuardContentBlock({
+              image: {
+                format: 'jpeg',
+                source: { bytes: imageBytes },
+              },
+            }),
+          ],
+        },
+      ]
+
+      collectIterator(provider.stream(messages))
+
+      expect(mockConverseStreamCommand).toHaveBeenLastCalledWith({
+        modelId: 'global.anthropic.claude-sonnet-4-5-20250929-v1:0',
+        messages: [
+          {
+            role: 'user',
+            content: [
+              { text: 'Is this image safe?' },
+              {
+                guardContent: {
+                  image: {
+                    format: 'jpeg',
+                    source: { bytes: imageBytes },
+                  },
+                },
+              },
+            ],
           },
         ],
       })
