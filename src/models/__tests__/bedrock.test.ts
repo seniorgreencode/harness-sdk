@@ -18,7 +18,9 @@ function setupMockSend(streamGenerator: () => AsyncGenerator<unknown>): void {
       stream: streamGenerator(),
     })
   )
-  vi.mocked(BedrockRuntimeClient).mockImplementation(() => ({ send: mockSend }) as never)
+  vi.mocked(BedrockRuntimeClient).mockImplementation(function () {
+    return { send: mockSend } as never
+  })
 }
 
 // Mock the AWS SDK
@@ -78,9 +80,11 @@ vi.mock('@aws-sdk/client-bedrock-runtime', async (importOriginal) => {
 
   return {
     ...originalModule,
-    BedrockRuntimeClient: vi.fn().mockImplementation(() => ({
-      send: mockSend,
-    })),
+    BedrockRuntimeClient: vi.fn(function () {
+      return {
+        send: mockSend,
+      }
+    }),
     ConverseStreamCommand,
     ConverseCommand,
     ValidationException: MockValidationException,
@@ -475,7 +479,9 @@ describe('BedrockModel', () => {
         }
       })
 
-      vi.mocked(BedrockRuntimeClient).mockImplementation(() => ({ send: mockSend }) as never)
+      vi.mocked(BedrockRuntimeClient).mockImplementation(function () {
+        return { send: mockSend } as never
+      })
 
       const provider = new BedrockModel({ stream })
       const messages: Message[] = [{ type: 'message', role: 'user', content: [{ type: 'textBlock', text: 'Hello' }] }]
@@ -538,7 +544,9 @@ describe('BedrockModel', () => {
           }
         }
       })
-      vi.mocked(BedrockRuntimeClient).mockImplementation(() => ({ send: mockSend }) as never)
+      vi.mocked(BedrockRuntimeClient).mockImplementation(function () {
+        return { send: mockSend } as never
+      })
 
       const provider = new BedrockModel({ stream })
       const messages: Message[] = [
@@ -602,7 +610,9 @@ describe('BedrockModel', () => {
           }
         }
       })
-      vi.mocked(BedrockRuntimeClient).mockImplementation(() => ({ send: mockSend }) as never)
+      vi.mocked(BedrockRuntimeClient).mockImplementation(function () {
+        return { send: mockSend } as never
+      })
 
       const provider = new BedrockModel({ stream })
       const messages: Message[] = [
@@ -660,7 +670,9 @@ describe('BedrockModel', () => {
           }
         }
       })
-      vi.mocked(BedrockRuntimeClient).mockImplementation(() => ({ send: mockSend }) as never)
+      vi.mocked(BedrockRuntimeClient).mockImplementation(function () {
+        return { send: mockSend } as never
+      })
 
       const provider = new BedrockModel({ stream })
       const messages: Message[] = [
@@ -699,7 +711,9 @@ describe('BedrockModel', () => {
       ])('throws $name', async ({ error, expected }) => {
         vi.clearAllMocks()
         const mockSendError = vi.fn().mockRejectedValue(error)
-        vi.mocked(BedrockRuntimeClient).mockImplementation(() => ({ send: mockSendError }) as never)
+        vi.mocked(BedrockRuntimeClient).mockImplementation(function () {
+          return { send: mockSendError } as never
+        })
 
         const provider = new BedrockModel()
         const messages: Message[] = [{ type: 'message', role: 'user', content: [{ type: 'textBlock', text: 'Hello' }] }]
