@@ -21,7 +21,7 @@
     <a href="https://pypi.org/project/strands-agents-mcp-server/"><img alt="PyPI version" src="https://img.shields.io/pypi/v/strands-agents-mcp-server"/></a>
     <a href="https://python.org"><img alt="Python versions" src="https://img.shields.io/pypi/pyversions/strands-agents-mcp-server"/></a>
   </div>
-  
+
   <p>
     <a href="https://strandsagents.com/">Documentation</a>
     ◆ <a href="https://github.com/strands-agents/samples">Samples</a>
@@ -52,6 +52,35 @@ You can use the Strands Agents MCP server with
 [40+ applications that support MCP servers](https://modelcontextprotocol.io/clients),
 including Amazon Q Developer CLI, Anthropic Claude Code, Cline, and Cursor.
 
+Get started quickly with one-click installation buttons for popular MCP clients. Click the buttons below to install servers directly in your IDE:
+
+[![Install in Kiro](https://img.shields.io/badge/Install-Kiro-9046FF?style=for-the-badge&logo=kiro)](https://kiro.dev/launch/mcp/add?name=strands-agents&config=%7B%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22strands-agents-mcp-server%22%5D%2C%22disabled%22%3Afalse%2C%22autoApprove%22%3A%5B%22search_docs%22%2C%22fetch_doc%22%5D%7D)
+[![Install in Cursor](https://img.shields.io/badge/Install-Cursor-blue?style=for-the-badge&logo=cursor)](https://cursor.com/en-US/install-mcp?name=strands-agents&config=eyJjb21tYW5kIjoidXZ4IHN0cmFuZHMtYWdlbnRzLW1jcC1zZXJ2ZXIifQ%3D%3D)
+[![Install in VS Code](https://img.shields.io/badge/Install-VS_Code-FF9900?style=for-the-badge&logo=visualstudiocode&logoColor=white)](https://vscode.dev/redirect?url=vscode:mcp/install?%7B%22name%22%3A%22strands-agents%22%2C%22type%22%3A%22stdio%22%2C%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22strands-agents-mcp-server%22%5D%7D)
+
+### Kiro example
+
+See the [Kiro documentation](https://kiro.dev/docs/mcp/configuration/)
+for instructions on managing MCP configuration.
+
+In `~/.kiro/settings/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "strands-agents": {
+      "command": "uvx",
+      "args": ["strands-agents-mcp-server"],
+      "env": {
+        "FASTMCP_LOG_LEVEL": "INFO"
+      },
+      "disabled": false,
+      "autoApprove": ["search_docs", "fetch_doc"]
+    }
+  }
+}
+```
+
 ### Q Developer CLI example
 
 See the [Q Developer CLI documentation](https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/command-line-mcp-configuration.html)
@@ -69,10 +98,7 @@ In `~/.aws/amazonq/mcp.json`:
         "FASTMCP_LOG_LEVEL": "INFO"
       },
       "disabled": false,
-      "autoApprove": [
-        "search_docs",
-        "fetch_doc"
-      ]
+      "autoApprove": ["search_docs", "fetch_doc"]
     }
   }
 }
@@ -117,10 +143,25 @@ In `~/.cursor/mcp.json`:
         "FASTMCP_LOG_LEVEL": "INFO"
       },
       "disabled": false,
-      "autoApprove": [
-        "search_docs",
-        "fetch_doc"
-      ]
+      "autoApprove": ["search_docs", "fetch_doc"]
+    }
+  }
+}
+```
+
+### VS Code example
+
+See the [VS Code documentation](https://code.visualstudio.com/docs/copilot/customization/mcp-servers)
+for instructions on managing MCP configuration.
+
+In your `mcp.json` file:
+
+```json
+{
+  "servers": {
+    "strands-agents": {
+      "command": "uvx",
+      "args": ["strands-agents-mcp-server"]
     }
   }
 }
@@ -138,25 +179,28 @@ npx @modelcontextprotocol/inspector uvx strands-agents-mcp-server
 npx @modelcontextprotocol/inspector python -m strands_mcp_server
 ```
 
-Note: This requires [npx](https://docs.npmjs.com/cli/v11/commands/npx) to be installed on your system. It comes bundled with [Node.js](https://nodejs.org/). 
+Note: This requires [npx](https://docs.npmjs.com/cli/v11/commands/npx) to be installed on your system. It comes bundled with [Node.js](https://nodejs.org/).
 
 The Inspector is also useful for troubleshooting MCP server issues as it provides detailed connection and protocol information. For an in-depth guide, have a look at the [MCP Inspector documentation](https://modelcontextprotocol.io/docs/tools/inspector).
 
 ## Getting Started
 
 1. **Install prerequisites**:
+
    - Install [uv](https://github.com/astral-sh/uv) following the [official installation instructions](https://github.com/astral-sh/uv#installation)
    - Make sure you have [Node.js](https://nodejs.org/) installed for npx commands
 
 2. **Configure your MCP client**:
+
    - Choose your preferred MCP client from the installation examples above
    - Add the Strands Agents MCP server configuration to your client
 
 3. **Test the connection**:
+
    ```bash
    # For published package
    npx @modelcontextprotocol/inspector uvx strands-agents-mcp-server
-   
+
    # For local development
    npx @modelcontextprotocol/inspector python -m strands_mcp_server
    ```
@@ -181,6 +225,7 @@ npx @modelcontextprotocol/inspector python -m strands_mcp_server
 ## Contributing ❤️
 
 We welcome contributions! See our [Contributing Guide](CONTRIBUTING.md) for details on:
+
 - Reporting bugs & features
 - Development setup
 - Contributing via Pull Requests
