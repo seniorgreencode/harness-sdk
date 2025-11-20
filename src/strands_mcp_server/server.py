@@ -99,7 +99,7 @@ def fetch_doc(uri: str = "") -> Dict[str, Any]:
         - title: Document title
         - content: Full document text content
         - error: Error message (if fetch failed)
-        
+
         Or when uri is empty:
         - urls: List of all available document URLs with titles
 
@@ -109,18 +109,12 @@ def fetch_doc(uri: str = "") -> Dict[str, Any]:
     # If no URI provided, return all available URLs (llms.txt catalog)
     if not uri:
         url_titles = cache.get_url_titles()
-        return {
-            "urls": [
-                {"url": url, "title": title}
-                for url, title in url_titles.items()
-            ]
-        }
+        return {"urls": [{"url": url, "title": title} for url, title in url_titles.items()]}
+    # Only accept https://strandsagents.com URLs
+    if not uri.startswith("https://strandsagents.com"):
+        return {"error": "only https://strandsagents.com URLs allowed", "url": uri}
 
-    # Accept HTTP/HTTPS URLs
-    if uri.startswith("http://") or uri.startswith("https://"):
-        url = uri
-    else:
-        return {"error": "unsupported uri", "url": uri}
+    url = uri
 
     page = cache.ensure_page(url)
     if page is None:
