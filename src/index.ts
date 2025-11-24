@@ -41,7 +41,6 @@ export type {
   MessageData,
   SystemPrompt,
   SystemContentBlock,
-  JsonBlock,
   ToolResultContent,
 } from './types/messages.js'
 
@@ -54,6 +53,7 @@ export {
   CachePointBlock,
   GuardContentBlock,
   Message,
+  JsonBlock,
 } from './types/messages.js'
 
 // Media classes
@@ -160,3 +160,6 @@ export {
   SlidingWindowConversationManager,
   type SlidingWindowConversationManagerConfig,
 } from './conversation-manager/sliding-window-conversation-manager.js'
+
+// MCP Client types and implementations
+export { type McpClientConfig, McpClient } from './mcp.js'
