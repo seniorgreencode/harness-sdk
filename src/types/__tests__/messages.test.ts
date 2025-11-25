@@ -6,8 +6,11 @@ import {
   ToolResultBlock,
   ReasoningBlock,
   CachePointBlock,
+  GuardContentBlock,
   JsonBlock,
   type MessageData,
+  type SystemPromptData,
+  systemPromptFromData,
 } from '../messages.js'
 import { ImageBlock, VideoBlock, DocumentBlock } from '../media.js'
 
@@ -299,5 +302,108 @@ describe('Message.fromMessageData', () => {
       content: [{ unknownType: { data: 'value' } }],
     } as unknown as MessageData
     expect(() => Message.fromMessageData(messageData)).toThrow('Unknown ContentBlockData type')
+  })
+})
+
+describe('systemPromptFromData', () => {
+  describe('when called with string', () => {
+    it('returns the string unchanged', () => {
+      const data: SystemPromptData = 'You are a helpful assistant'
+      const result = systemPromptFromData(data)
+      expect(result).toBe('You are a helpful assistant')
+    })
+  })
+
+  describe('when called with TextBlockData', () => {
+    it('converts to TextBlock', () => {
+      const data: SystemPromptData = [{ text: 'System prompt text' }]
+      const result = systemPromptFromData(data)
+      expect(result).toEqual([new TextBlock('System prompt text')])
+    })
+  })
+
+  describe('when called with CachePointBlockData', () => {
+    it('converts to CachePointBlock', () => {
+      const data: SystemPromptData = [{ text: 'prompt' }, { cachePoint: { cacheType: 'default' } }]
+      const result = systemPromptFromData(data)
+      expect(result).toEqual([new TextBlock('prompt'), new CachePointBlock({ cacheType: 'default' })])
+    })
+  })
+
+  describe('when called with GuardContentBlockData', () => {
+    it('converts to GuardContentBlock', () => {
+      const data: SystemPromptData = [
+        {
+          guardContent: {
+            text: {
+              text: 'guard this content',
+              qualifiers: ['guard_content'],
+            },
+          },
+        },
+      ]
+      const result = systemPromptFromData(data)
+      expect(result).toEqual([
+        new GuardContentBlock({
+          text: {
+            text: 'guard this content',
+            qualifiers: ['guard_content'],
+          },
+        }),
+      ])
+    })
+  })
+
+  describe('when called with mixed content blocks', () => {
+    it('converts all block types correctly', () => {
+      const data: SystemPromptData = [
+        { text: 'First text block' },
+        { cachePoint: { cacheType: 'default' } },
+        { text: 'Second text block' },
+        {
+          guardContent: {
+            text: {
+              text: 'guard content',
+              qualifiers: ['guard_content'],
+            },
+          },
+        },
+      ]
+      const result = systemPromptFromData(data)
+      expect(result).toEqual([
+        new TextBlock('First text block'),
+        new CachePointBlock({ cacheType: 'default' }),
+        new TextBlock('Second text block'),
+        new GuardContentBlock({
+          text: {
+            text: 'guard content',
+            qualifiers: ['guard_content'],
+          },
+        }),
+      ])
+    })
+  })
+
+  describe('when called with empty array', () => {
+    it('returns empty array', () => {
+      const data: SystemPromptData = []
+      const result = systemPromptFromData(data)
+      expect(result).toEqual([])
+    })
+  })
+
+  describe('when called with unknown block type', () => {
+    it('throws error', () => {
+      const data = [{ unknownType: { data: 'value' } }] as unknown as SystemPromptData
+      expect(() => systemPromptFromData(data)).toThrow('Unknown SystemContentBlockData type')
+    })
+  })
+
+  describe('when called with class instances', () => {
+    it('returns them unchanged', () => {
+      const systemPrompt = [new TextBlock('prompt'), new CachePointBlock({ cacheType: 'default' })]
+      const result = systemPromptFromData(systemPrompt)
+      expect(result).toEqual(systemPrompt)
+    })
   })
 })

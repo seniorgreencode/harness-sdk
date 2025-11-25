@@ -40,6 +40,7 @@ export type {
   ContentBlockData,
   MessageData,
   SystemPrompt,
+  SystemPromptData,
   SystemContentBlock,
   ToolResultContent,
 } from './types/messages.js'

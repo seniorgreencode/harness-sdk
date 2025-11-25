@@ -455,6 +455,42 @@ export type StopReason =
 export type SystemPrompt = string | SystemContentBlock[]
 
 /**
+ * Data representation of a system prompt.
+ * Can be a simple string or an array of system content block data for advanced caching.
+ *
+ * This is the data interface counterpart to SystemPrompt, following the <name>Data pattern.
+ */
+export type SystemPromptData = string | SystemContentBlockData[]
+
+/**
+ * Converts SystemPromptData to SystemPrompt by converting data blocks to class instances.
+ * If already in SystemPrompt format (class instances), returns as-is.
+ *
+ * @param data - System prompt data to convert
+ * @returns SystemPrompt with class-based content blocks
+ */
+export function systemPromptFromData(data: SystemPromptData | SystemPrompt): SystemPrompt {
+  if (typeof data === 'string') {
+    return data
+  }
+
+  // Convert data format to class instances
+  return data.map((block) => {
+    if ('type' in block) {
+      return block
+    } else if ('cachePoint' in block) {
+      return new CachePointBlock(block.cachePoint)
+    } else if ('guardContent' in block) {
+      return new GuardContentBlock(block.guardContent)
+    } else if ('text' in block) {
+      return new TextBlock(block.text)
+    } else {
+      throw new Error('Unknown SystemContentBlockData type')
+    }
+  })
+}
+
+/**
  * A block of content within a system prompt.
  * Supports text content, cache points, and guard content for prompt caching and guardrail evaluation.
  *
