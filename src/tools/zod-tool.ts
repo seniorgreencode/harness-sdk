@@ -3,7 +3,12 @@ import { Tool } from './tool.js'
 import type { ToolSpec } from './types.js'
 import type { JSONSchema, JSONValue } from '../types/json.js'
 import { FunctionTool } from './function-tool.js'
-import { z } from 'zod'
+import { z, ZodVoid } from 'zod'
+
+/**
+ * Helper type to infer input type from Zod schema or default to never.
+ */
+type ZodInferred<TInput> = TInput extends z.ZodType ? z.infer<TInput> : never
 
 /**
  * Configuration for creating a Zod-based tool.
@@ -11,15 +16,18 @@ import { z } from 'zod'
  * @typeParam TInput - Zod schema type for input validation
  * @typeParam TReturn - Return type of the callback function
  */
-export interface ToolConfig<TInput extends z.ZodType, TReturn extends JSONValue = JSONValue> {
+export interface ToolConfig<TInput extends z.ZodType | undefined, TReturn extends JSONValue = JSONValue> {
   /** The name of the tool */
   name: string
 
   /** A description of what the tool does (optional) */
   description?: string
 
-  /** Zod schema for input validation and JSON schema generation */
-  inputSchema: TInput
+  /**
+   * Zod schema for input validation and JSON schema generation.
+   * If omitted or z.void(), the tool takes no input parameters.
+   */
+  inputSchema?: TInput
 
   /**
    * Callback function that implements the tool's functionality.
@@ -29,7 +37,7 @@ export interface ToolConfig<TInput extends z.ZodType, TReturn extends JSONValue 
    * @returns The result (can be a value, Promise, or AsyncGenerator)
    */
   callback: (
-    input: z.infer<TInput>,
+    input: ZodInferred<TInput>,
     context?: ToolContext
   ) => AsyncGenerator<unknown, TReturn, never> | Promise<TReturn> | TReturn
 }
@@ -38,9 +46,9 @@ export interface ToolConfig<TInput extends z.ZodType, TReturn extends JSONValue 
  * Internal implementation of a Zod-based tool.
  * Extends Tool abstract class and implements InvokableTool interface.
  */
-class ZodTool<TInput extends z.ZodType, TReturn extends JSONValue = JSONValue>
+class ZodTool<TInput extends z.ZodType | undefined, TReturn extends JSONValue = JSONValue>
   extends Tool
-  implements InvokableTool<z.infer<TInput>, TReturn>
+  implements InvokableTool<ZodInferred<TInput>, TReturn>
 {
   /**
    * Internal FunctionTool for delegating stream operations.
@@ -49,14 +57,15 @@ class ZodTool<TInput extends z.ZodType, TReturn extends JSONValue = JSONValue>
 
   /**
    * Zod schema for input validation.
+   * Note: undefined is normalized to z.void() in constructor, so this is always defined.
    */
-  private readonly _inputSchema: TInput
+  private readonly _inputSchema: z.ZodType
 
   /**
    * User callback function.
    */
   private readonly _callback: (
-    input: z.infer<TInput>,
+    input: ZodInferred<TInput>,
     context?: ToolContext
   ) => AsyncGenerator<unknown, TReturn, never> | Promise<TReturn> | TReturn
 
@@ -64,27 +73,40 @@ class ZodTool<TInput extends z.ZodType, TReturn extends JSONValue = JSONValue>
     super()
     const { name, description = '', inputSchema, callback } = config
 
-    this._inputSchema = inputSchema
+    // Normalize undefined to z.void() to simplify logic throughout
+    this._inputSchema = inputSchema ?? z.void()
     this._callback = callback
 
-    // Generate JSON Schema from Zod and strip $schema property to reduce token usage
-    const generatedSchema = z.toJSONSchema(inputSchema) as JSONSchema & { $schema?: string }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { $schema, ...schemaWithoutMeta } = generatedSchema
+    let generatedSchema: JSONSchema
+
+    // Handle z.void() - use default empty object schema
+    if (this._inputSchema instanceof ZodVoid) {
+      generatedSchema = {
+        type: 'object',
+        properties: {},
+        additionalProperties: false,
+      }
+    } else {
+      // Generate JSON Schema from Zod and strip $schema property to reduce token usage
+      const schema = z.toJSONSchema(this._inputSchema) as JSONSchema & { $schema?: string }
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { $schema, ...schemaWithoutMeta } = schema
+      generatedSchema = schemaWithoutMeta as JSONSchema
+    }
 
     // Create a FunctionTool with a validation wrapper
     this._functionTool = new FunctionTool({
       name,
       description,
-      inputSchema: schemaWithoutMeta as JSONSchema,
+      inputSchema: generatedSchema,
       callback: (
         input: unknown,
         toolContext: ToolContext
       ): AsyncGenerator<JSONValue, JSONValue, never> | Promise<JSONValue> | JSONValue => {
-        // Validate input using Zod schema (throws on validation error)
-        const validatedInput = inputSchema.parse(input)
+        // Only validate if schema is not z.void() (after normalization, it's never undefined)
+        const validatedInput = this._inputSchema instanceof ZodVoid ? input : this._inputSchema.parse(input)
         // Execute user callback with validated input
-        return callback(validatedInput, toolContext) as
+        return callback(validatedInput as ZodInferred<TInput>, toolContext) as
           | AsyncGenerator<JSONValue, JSONValue, never>
           | Promise<JSONValue>
           | JSONValue
@@ -136,12 +158,12 @@ class ZodTool<TInput extends z.ZodType, TReturn extends JSONValue = JSONValue>
    * @param context - Optional tool execution context
    * @returns The unwrapped result
    */
-  async invoke(input: z.infer<TInput>, context?: ToolContext): Promise<TReturn> {
-    // Validate input using Zod schema (throws on validation error)
-    const validatedInput = this._inputSchema.parse(input)
+  async invoke(input: ZodInferred<TInput>, context?: ToolContext): Promise<TReturn> {
+    // Only validate if schema is not z.void() (after normalization, it's never undefined)
+    const validatedInput = this._inputSchema instanceof ZodVoid ? input : this._inputSchema.parse(input)
 
     // Execute callback with validated input
-    const result = this._callback(validatedInput, context)
+    const result = this._callback(validatedInput as ZodInferred<TInput>, context)
 
     // Handle different return types
     if (result && typeof result === 'object' && Symbol.asyncIterator in result) {
@@ -169,6 +191,7 @@ class ZodTool<TInput extends z.ZodType, TReturn extends JSONValue = JSONValue>
  * import { tool } from '@strands-agents/sdk'
  * import { z } from 'zod'
  *
+ * // Tool with input parameters
  * const calculator = tool({
  *   name: 'calculator',
  *   description: 'Performs basic arithmetic',
@@ -187,6 +210,13 @@ class ZodTool<TInput extends z.ZodType, TReturn extends JSONValue = JSONValue>
  *   }
  * })
  *
+ * // Tool without input (omit inputSchema)
+ * const getStatus = tool({
+ *   name: 'getStatus',
+ *   description: 'Gets system status',
+ *   callback: () => ({ status: 'operational', uptime: 99.9 })
+ * })
+ *
  * // Direct invocation
  * const result = await calculator.invoke({ operation: 'add', a: 5, b: 3 })
  *
@@ -201,8 +231,8 @@ class ZodTool<TInput extends z.ZodType, TReturn extends JSONValue = JSONValue>
  * @param config - Tool configuration
  * @returns An InvokableTool that implements the Tool interface with invoke() method
  */
-export function tool<TInput extends z.ZodType, TReturn extends JSONValue = JSONValue>(
+export function tool<TInput extends z.ZodType | undefined, TReturn extends JSONValue = JSONValue>(
   config: ToolConfig<TInput, TReturn>
-): InvokableTool<z.infer<TInput>, TReturn> {
+): InvokableTool<ZodInferred<TInput>, TReturn> {
   return new ZodTool(config)
 }
