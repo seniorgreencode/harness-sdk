@@ -159,6 +159,7 @@ nav:
       - Tools:
         - UTCP: community/tools/utcp.md
       - Model Providers:
+        - Amazon Nova: community/model-providers/amazon-nova.md
         - Cohere: community/model-providers/cohere.md
         - CLOVA Studio: community/model-providers/clova-studio.md
         - Fireworks AI: community/model-providers/fireworksai.md
