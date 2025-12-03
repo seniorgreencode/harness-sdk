@@ -9,12 +9,14 @@ Simulators enable dynamic, multi-turn evaluation of conversational agents by gen
 Traditional evaluation approaches have limitations when assessing conversational agents:
 
 **Static Evaluators:**
+
 - Evaluate single input/output pairs
 - Cannot test multi-turn conversation flow
 - Miss context-dependent behaviors
 - Don't capture goal-oriented interactions
 
 **Simulators:**
+
 - Generate dynamic, multi-turn conversations
 - Adapt responses based on agent behavior
 - Test goal completion in realistic scenarios

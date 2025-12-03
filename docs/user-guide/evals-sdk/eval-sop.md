@@ -9,17 +9,20 @@ Eval SOP is an AI-powered assistant that transforms the complex process of agent
 Designing effective agent evaluations is notoriously difficult and time-consuming:
 
 ### **Evaluation Design Complexity**
+
 - **Metric Selection**: Choosing appropriate evaluators (output quality, trajectory analysis, helpfulness) requires deep understanding of evaluation theory
 - **Test Case Coverage**: Creating comprehensive test cases that cover edge cases, failure modes, and diverse scenarios is labor-intensive
 - **Evaluation Bias**: Manual evaluation design often reflects creator assumptions rather than real-world usage patterns
 - **Inconsistent Standards**: Different team members create evaluations with varying quality and coverage
 
 ### **Technical Implementation Barriers**
+
 - **SDK Learning Curve**: Understanding Strands Evaluation SDK APIs, evaluator configurations, and best practices
 - **Code Generation**: Writing evaluation scripts requires both evaluation expertise and programming skills
 - **Integration Complexity**: Connecting agents, evaluators, test data, and reporting into cohesive workflows
 
 ### **Quality and Reliability Issues**
+
 - **Incomplete Coverage**: Manual test case creation often misses critical scenarios
 - **Evaluation Drift**: Ad-hoc evaluation approaches lead to inconsistent results over time
 - **Poor Documentation**: Evaluation rationale and methodology often poorly documented
@@ -30,24 +33,28 @@ Designing effective agent evaluations is notoriously difficult and time-consumin
 Eval SOP addresses these challenges through AI-powered automation and structured workflows:
 
 ### **Intelligent Evaluation Planning**
+
 - **Automated Analysis**: Analyzes your agent architecture and requirements to recommend appropriate evaluation strategies
 - **Comprehensive Coverage**: Generates evaluation plans that systematically cover functionality, edge cases, and failure modes
 - **Best Practice Integration**: Applies evaluation methodology best practices automatically
 - **Stakeholder Alignment**: Creates clear evaluation plans that technical and non-technical stakeholders can understand
 
 ### **High-Quality Test Data Generation**
+
 - **Scenario-Based Generation**: Creates realistic test cases aligned with actual usage patterns
 - **Edge Case Discovery**: Automatically identifies and generates tests for boundary conditions and failure scenarios
 - **Diverse Coverage**: Ensures test cases span different difficulty levels, input types, and expected behaviors
 - **Contextual Relevance**: Generates test data specific to your agent's domain and capabilities
 
 ### **Expert-Level Implementation**
+
 - **Code Generation**: Automatically writes evaluation scripts using Strands Evaluation SDK best practices
 - **Evaluator Selection**: Intelligently chooses and configures appropriate evaluators for your use case
 - **Integration Handling**: Manages the complexity of connecting agents, evaluators, and test data
 - **Error Recovery**: Provides debugging guidance when evaluation execution encounters issues
 
 ### **Professional Reporting**
+
 - **Actionable Insights**: Generates reports with specific recommendations for agent improvement
 - **Trend Analysis**: Identifies patterns in agent performance across different scenarios
 - **Stakeholder Communication**: Creates reports suitable for both technical teams and business stakeholders

@@ -48,18 +48,22 @@ class CustomEvaluator(Evaluator[InputT, OutputT]):
 Synchronous evaluation method that must be implemented.
 
 **Parameters:**
+
 - `evaluation_case`: Contains input, output, expected values, and trajectory
 
 **Returns:**
+
 - List of `EvaluationOutput` objects with scores and reasoning
 
 ### `evaluate_async(evaluation_case: EvaluationData) -> list[EvaluationOutput]`
 Asynchronous evaluation method that must be implemented.
 
 **Parameters:**
+
 - Same as `evaluate()`
 
 **Returns:**
+
 - Same as `evaluate()`
 
 ## EvaluationData Structure
