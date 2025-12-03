@@ -8,49 +8,84 @@ Strands Agents Tools is a community-driven project that provides a powerful set 
 
 Tools are passed to agents during initialization or at runtime, making them available for use throughout the agent's lifecycle. Once loaded, the agent can use these tools in response to user requests:
 
-```python
-from strands import Agent
-from strands_tools import calculator, file_read, shell
+=== "Python"
 
-# Add tools to our agent
-agent = Agent(
-    tools=[calculator, file_read, shell]
-)
+    ```python
+    from strands import Agent
+    from strands_tools import calculator, file_read, shell
 
-# Agent will automatically determine when to use the calculator tool
-agent("What is 42 ^ 9")
+    # Add tools to our agent
+    agent = Agent(
+        tools=[calculator, file_read, shell]
+    )
 
-print("\n\n")  # Print new lines
+    # Agent will automatically determine when to use the calculator tool
+    agent("What is 42 ^ 9")
 
-# Agent will use the shell and file reader tool when appropriate
-agent("Show me the contents of a single file in this directory")
-```
+    print("\n\n")  # Print new lines
 
-We can see which tools are loaded in our agent in `agent.tool_names`, along with a JSON representation of the tools in `agent.tool_config` that also includes the tool descriptions and input parameters:
+    # Agent will use the shell and file reader tool when appropriate
+    agent("Show me the contents of a single file in this directory")
+    ```
 
-```python
-print(agent.tool_names)
+=== "TypeScript"
 
-print(agent.tool_registry.get_all_tools_config())
-```
+    ```typescript
+    --8<-- "user-guide/concepts/tools/tools.ts:adding_tools"
+    ```
 
-Tools can also be loaded by passing a file path to our agents during initialization:
+We can see which tools are loaded in our agent:
 
-```python
-agent = Agent(tools=["/path/to/my_tool.py"])
-```
+=== "Python"
 
-## Auto-loading and reloading tools
+    In Python, you can access `agent.tool_names` for a list of tool names, and `agent.tool_registry.get_all_tools_config()` for a JSON representation including descriptions and input parameters:
 
-Tools placed in your current working directory `./tools/` can be automatically loaded at agent initialization, and automatically reloaded when modified. This can be really useful when developing and debugging tools: simply modify the tool code and any agents using that tool will reload it to use the latest modifications!
+    ```python
+    print(agent.tool_names)
 
-Automatic loading and reloading of tools in the `./tools/` directory is disabled by default. To enable this behavior, set `load_tools_from_directory=True` during `Agent` initialization:
+    print(agent.tool_registry.get_all_tools_config())
+    ```
 
-```python
-from strands import Agent
+=== "TypeScript"
 
-agent = Agent(load_tools_from_directory=True)
-```
+    In TypeScript, you can access the tools array directly:
+
+    ```typescript
+    // Access all tools
+    console.log(agent.tools)
+    ```
+
+
+## Loading Tools from Files
+
+=== "Python"
+
+    Tools can also be loaded by passing a file path to our agents during initialization:
+
+    ```python
+    agent = Agent(tools=["/path/to/my_tool.py"])
+    ```
+
+{{ ts_not_supported_code() }}
+
+
+### Auto-loading and reloading tools
+
+=== "Python"
+
+
+    Tools placed in your current working directory `./tools/` can be automatically loaded at agent initialization, and automatically reloaded when modified. This can be really useful when developing and debugging tools: simply modify the tool code and any agents using that tool will reload it to use the latest modifications!
+
+    Automatic loading and reloading of tools in the `./tools/` directory is disabled by default. To enable this behavior, set `load_tools_from_directory=True` during `Agent` initialization:
+
+    ```python
+    from strands import Agent
+
+    agent = Agent(load_tools_from_directory=True)
+    ```
+{{ ts_not_supported_code() }}
+
+
 
 !!! note "Tool Loading Implications"
     When enabling automatic tool loading, any Python file placed in the `./tools/` directory will be executed by the agent. Under the shared responsibility model, it is your responsibility to ensure that only safe, trusted code is written to the tool loading directory, as the agent will automatically pick up and execute any tools found there.
@@ -65,33 +100,82 @@ Agents have context about tool calls and their results as part of conversation h
 
 The most common way agents use tools is through natural language requests. The agent determines when and how to invoke tools based on the user's input:
 
-```python
-# Agent decides when to use tools based on the request
-agent("Please read the file at /path/to/file.txt")
-```
+=== "Python"
+
+    ```python
+    # Agent decides when to use tools based on the request
+    agent("Please read the file at /path/to/file.txt")
+    ```
+
+=== "TypeScript"
+
+    ```typescript
+    --8<-- "user-guide/concepts/tools/tools.ts:natural_language_invocation"
+    ```
 
 ### Direct Method Calls
 
-Every tool added to an agent also becomes a method accessible directly on the agent object. This is useful for programmatically invoking tools:
+Tools can be invoked programmatically in addition to natural language invocation.
 
-```python
-# Directly invoke a tool as a method
-result = agent.tool.file_read(path="/path/to/file.txt", mode="view")
-```
+=== "Python"
 
-When calling tools directly as methods, always use keyword arguments - positional arguments are *not* supported for direct method calls:
+    Every tool added to an agent becomes a method accessible directly on the agent object:
 
-```python
-# This will NOT work - positional arguments are not supported
-result = agent.tool.file_read("/path/to/file.txt", "view")  # ❌ Don't do this
-```
+    ```python
+    # Directly invoke a tool as a method
+    result = agent.tool.file_read(path="/path/to/file.txt", mode="view")
+    ```
 
-If a tool name contains hyphens, you can invoke the tool using underscores instead:
+    When calling tools directly as methods, always use keyword arguments - positional arguments are *not* supported:
 
-```python
-# Directly invoke a tool named "read-all"
-result = agent.tool.read_all(path="/path/to/file.txt")
-```
+    ```python
+    # This will NOT work - positional arguments are not supported
+    result = agent.tool.file_read("/path/to/file.txt", "view")  # ❌ Don't do this
+    ```
+
+    If a tool name contains hyphens, you can invoke the tool using underscores instead:
+
+    ```python
+    # Directly invoke a tool named "read-all"
+    result = agent.tool.read_all(path="/path/to/file.txt")
+    ```
+
+=== "TypeScript"
+
+    Find the tool in the `agent.tools` array and call its `invoke()` method. You need to provide both the input and a context object (when required) with the tool use details.
+
+    ```typescript
+    --8<-- "user-guide/concepts/tools/tools.ts:direct_invocation"
+    ```
+
+
+## Tool Executors
+
+When models return multiple tool requests, you can control whether they execute concurrently or sequentially.
+
+=== "Python"
+
+    Agents use concurrent execution by default, but you can specify sequential execution for cases where order matters:
+
+    ```python
+    from strands import Agent
+    from strands.tools.executors import SequentialToolExecutor
+
+    # Concurrent execution (default)
+    agent = Agent(tools=[weather_tool, time_tool])
+    agent("What is the weather and time in New York?")
+
+    # Sequential execution
+    agent = Agent(
+        tool_executor=SequentialToolExecutor(),
+        tools=[screenshot_tool, email_tool]
+    )
+    agent("Take a screenshot and email it to my friend")
+    ```
+
+    For more details, see [Tool Executors](executors.md).
+
+{{ ts_not_supported_code() }}
 
 ## Tool Executors
 
@@ -117,168 +201,225 @@ For more details, see [Tool Executors](executors.md).
 
 ## Building & Loading Tools
 
-### 1. Python Tools
+### 1. Custom Tools
 
-Build your own Python tools using the Strands SDK's tool interfaces.
-
-#### Function Decorator Approach
-
-Function decorated tools can be placed anywhere in your codebase and imported in to your agent's list of tools. Define any Python function as a tool by using the [`@tool`](../../../api-reference/tools.md#strands.tools.decorator.tool) decorator.
-
-```python
-import asyncio
-from strands import Agent, tool
+Build your own tools using the Strands SDK's tool interfaces. Both Python and TypeScript support creating custom tools, though with different approaches.
 
 
-@tool
-def get_user_location() -> str:
-    """Get the user's location."""
 
-    # Implement user location lookup logic here
-    return "Seattle, USA"
+#### Function-Based Tools
 
+=== "Python"
 
-@tool
-def weather(location: str) -> str:
-    """Get weather information for a location.
+    Define any Python function as a tool by using the [`@tool`](../../../api-reference/tools.md#strands.tools.decorator.tool) decorator. Function decorated tools can be placed anywhere in your codebase and imported in to your agent's list of tools. 
 
-    Args:
-        location: City or location name
-    """
-
-    # Implement weather lookup logic here
-    return f"Weather for {location}: Sunny, 72°F"
+    ```python
+    import asyncio
+    from strands import Agent, tool
 
 
-@tool
-async def call_api() -> str:
-    """Call API asynchronously.
+    @tool
+    def get_user_location() -> str:
+        """Get the user's location."""
 
-    Strands will invoke all async tools concurrently.
-    """
-
-    await asyncio.sleep(5)  # simulated api call
-    return "API result"
+        # Implement user location lookup logic here
+        return "Seattle, USA"
 
 
-def basic_example():
-    agent = Agent(tools=[get_user_location, weather])
-    agent("What is the weather like in my location?")
+    @tool
+    def weather(location: str) -> str:
+        """Get weather information for a location.
+
+        Args:
+            location: City or location name
+        """
+
+        # Implement weather lookup logic here
+        return f"Weather for {location}: Sunny, 72°F"
 
 
-async def async_example():
-    agent = Agent(tools=[call_api])
-    await agent.invoke_async("Can you call my API?")
+    @tool
+    async def call_api() -> str:
+        """Call API asynchronously.
+
+        Strands will invoke all async tools concurrently.
+        """
+
+        await asyncio.sleep(5)  # simulated api call
+        return "API result"
 
 
-def main():
-    basic_example()
-    asyncio.run(async_example())
-```
+    def basic_example():
+        agent = Agent(tools=[get_user_location, weather])
+        agent("What is the weather like in my location?")
 
-#### Module-Based Approach
 
-Tool modules can also provide single tools that don't use the decorator pattern, instead they define the `TOOL_SPEC` variable and a function matching the tool's name. In this example `weather.py`:
+    async def async_example():
+        agent = Agent(tools=[call_api])
+        await agent.invoke_async("Can you call my API?")
 
-```python
-# weather.py
 
-from typing import Any
-from strands.types.tools import ToolResult, ToolUse
+    def main():
+        basic_example()
+        asyncio.run(async_example())
+    ```
 
-TOOL_SPEC = {
-    "name": "weather",
-    "description": "Get weather information for a location",
-    "inputSchema": {
-        "json": {
-            "type": "object",
-            "properties": {
-                "location": {
-                    "type": "string",
-                    "description": "City or location name"
-                }
-            },
-            "required": ["location"]
+=== "TypeScript"
+
+
+    Use the `tool()` function to create tools with [Zod](https://zod.dev/) schema validation. These tools can then be passed directly to your agents.
+
+    ```typescript
+    --8<-- "user-guide/concepts/tools/tools.ts:basic_tool"
+    ```
+
+    For more details on building custom tools, see [Creating Custom Tools](custom-tools.md).
+
+
+#### Module-Based Tools
+
+=== "Python"
+
+    Tool modules can also provide single tools that don't use the decorator pattern, instead they define the `TOOL_SPEC` variable and a function matching the tool's name. In this example `weather.py`:
+
+    ```python
+    # weather.py
+
+    from typing import Any
+    from strands.types.tools import ToolResult, ToolUse
+
+    TOOL_SPEC = {
+        "name": "weather",
+        "description": "Get weather information for a location",
+        "inputSchema": {
+            "json": {
+                "type": "object",
+                "properties": {
+                    "location": {
+                        "type": "string",
+                        "description": "City or location name"
+                    }
+                },
+                "required": ["location"]
+            }
         }
     }
-}
 
-# Function name must match tool name
-# May also be defined async similar to decorated tools
-def weather(tool: ToolUse, **kwargs: Any) -> ToolResult:
-    tool_use_id = tool["toolUseId"]
-    location = tool["input"]["location"]
+    # Function name must match tool name
+    # May also be defined async similar to decorated tools
+    def weather(tool: ToolUse, **kwargs: Any) -> ToolResult:
+        tool_use_id = tool["toolUseId"]
+        location = tool["input"]["location"]
 
-    # Implement weather lookup logic here
-    weather_info = f"Weather for {location}: Sunny, 72°F"
+        # Implement weather lookup logic here
+        weather_info = f"Weather for {location}: Sunny, 72°F"
 
-    return {
-        "toolUseId": tool_use_id,
-        "status": "success",
-        "content": [{"text": weather_info}]
-    }
-```
+        return {
+            "toolUseId": tool_use_id,
+            "status": "success",
+            "content": [{"text": weather_info}]
+        }
+    ```
 
-And finally our `agent.py` file that demonstrates loading the decorated `get_user_location` tool from a Python module, and the single non-decorated `weather` tool module:
+    And finally our `agent.py` file that demonstrates loading the decorated `get_user_location` tool from a Python module, and the single non-decorated `weather` tool module:
 
-```python
-# agent.py
+    ```python
+    # agent.py
 
-from strands import Agent
-import get_user_location
-import weather
+    from strands import Agent
+    import get_user_location
+    import weather
 
-# Tools can be added to agents through Python module imports
-agent = Agent(tools=[get_user_location, weather])
+    # Tools can be added to agents through Python module imports
+    agent = Agent(tools=[get_user_location, weather])
 
-# Use the agent with the custom tools
-agent("What is the weather like in my location?")
-```
+    # Use the agent with the custom tools
+    agent("What is the weather like in my location?")
+    ```
 
-Tool modules can also be loaded by providing their module file paths:
+    Tool modules can also be loaded by providing their module file paths:
 
-```python
-from strands import Agent
+    ```python
+    from strands import Agent
 
-# Tools can be added to agents through file path strings
-agent = Agent(tools=["./get_user_location.py", "./weather.py"])
+    # Tools can be added to agents through file path strings
+    agent = Agent(tools=["./get_user_location.py", "./weather.py"])
 
-agent("What is the weather like in my location?")
-```
+    agent("What is the weather like in my location?")
+    ```
 
-For more details on building custom Python tools, see [Python Tools](python-tools.md).
+    For more details on building custom Python tools, see [Creating Custom Tools](custom-tools.md).
 
-### 2. Model Context Protocol (MCP) Tools
+
+{{ ts_not_supported_code() }}
+
+
+
+### 2. Vended Tools
+
+Pre-built tools are available in both Python and TypeScript to help you get started quickly.
+
+=== "Python"
+
+    **Community Tools Package**
+
+    For Python, Strands offers a [community-supported tools package]({{ tools_repo }}) with pre-built tools for development:
+
+    ```python
+    from strands import Agent
+    from strands_tools import calculator, file_read, shell
+
+    agent = Agent(tools=[calculator, file_read, shell])
+    ```
+
+    For a complete list of available tools, see [Community Tools Package](community-tools-package.md).
+
+=== "TypeScript"
+
+    **Vended Tools**
+
+    TypeScript vended tools are included in the SDK at [`vended_tools/`]({{ ts_sdk_repo_home }}/vended_tools). 
+    The Community Tools Package (`strands-agents-tools`) is Python-only.
+
+    ```typescript
+    --8<-- "user-guide/concepts/tools/tools.ts:vended_tools"
+    ```
+
+    
+
+### 3. Model Context Protocol (MCP) Tools
 
 The [Model Context Protocol (MCP)](https://modelcontextprotocol.io) provides a standardized way to expose and consume tools across different systems. This approach is ideal for creating reusable tool collections that can be shared across multiple agents or applications.
 
-```python
-from mcp.client.sse import sse_client
-from strands import Agent
-from strands.tools.mcp import MCPClient
+=== "Python"
 
-# Connect to an MCP server using SSE transport
-sse_mcp_client = MCPClient(lambda: sse_client("http://localhost:8000/sse"))
+    ```python
+    from mcp.client.sse import sse_client
+    from strands import Agent
+    from strands.tools.mcp import MCPClient
 
-# Create an agent with MCP tools
-with sse_mcp_client:
-    # Get the tools from the MCP server
-    tools = sse_mcp_client.list_tools_sync()
+    # Connect to an MCP server using SSE transport
+    sse_mcp_client = MCPClient(lambda: sse_client("http://localhost:8000/sse"))
 
-    # Create an agent with the MCP server's tools
-    agent = Agent(tools=tools)
+    # Create an agent with MCP tools
+    with sse_mcp_client:
+        # Get the tools from the MCP server
+        tools = sse_mcp_client.list_tools_sync()
 
-    # Use the agent with MCP tools
-    agent("Calculate the square root of 144")
-```
+        # Create an agent with the MCP server's tools
+        agent = Agent(tools=tools)
+
+        # Use the agent with MCP tools
+        agent("Calculate the square root of 144")
+    ```
+
+=== "TypeScript"
+
+    ```typescript
+    --8<-- "user-guide/concepts/tools/mcp-tools.ts:tools_overview_example"
+    ```
 
 For more information on using MCP tools, see [MCP Tools](mcp-tools.md).
-
-### 3. Community Built Tools
-
-For rapid prototyping and common tasks, Strands offers a [community-supported tools package]({{ tools_repo }}) with pre-built tools for development. These tools cover a wide variety of capabilities including File Operations, Shell & Local System control, Web & Network for API calls, and Agents & Workflows for orchestration.
-
-For a complete list of available tools and their detailed descriptions, see [Community Tools Package](community-tools-package.md).
 
 ## Tool Design Best Practices
 
@@ -296,54 +437,62 @@ A good tool description should:
 
 Example of a well-described tool:
 
-```python
-@tool
-def search_database(query: str, max_results: int = 10) -> list:
-    """
-    Search the product database for items matching the query string.
+=== "Python"
 
-    Use this tool when you need to find detailed product information based on keywords,
-    product names, or categories. The search is case-insensitive and supports fuzzy
-    matching to handle typos and variations in search terms.
+    ```python
+    @tool
+    def search_database(query: str, max_results: int = 10) -> list:
+        """
+        Search the product database for items matching the query string.
 
-    This tool connects to the enterprise product catalog database and performs a semantic
-    search across all product fields, providing comprehensive results with all available
-    product metadata.
+        Use this tool when you need to find detailed product information based on keywords,
+        product names, or categories. The search is case-insensitive and supports fuzzy
+        matching to handle typos and variations in search terms.
 
-    Example response:
-        [
-            {
-                "id": "P12345",
-                "name": "Ultra Comfort Running Shoes",
-                "description": "Lightweight running shoes with...",
-                "price": 89.99,
-                "category": ["Footwear", "Athletic", "Running"]
-            },
-            ...
-        ]
+        This tool connects to the enterprise product catalog database and performs a semantic
+        search across all product fields, providing comprehensive results with all available
+        product metadata.
 
-    Notes:
-        - This tool only searches the product catalog and does not provide
-          inventory or availability information
-        - Results are cached for 15 minutes to improve performance
-        - The search index updates every 6 hours, so very recent products may not appear
-        - For real-time inventory status, use a separate inventory check tool
+        Example response:
+            [
+                {
+                    "id": "P12345",
+                    "name": "Ultra Comfort Running Shoes",
+                    "description": "Lightweight running shoes with...",
+                    "price": 89.99,
+                    "category": ["Footwear", "Athletic", "Running"]
+                },
+                ...
+            ]
 
-    Args:
-        query: The search string (product name, category, or keywords)
-               Example: "red running shoes" or "smartphone charger"
-        max_results: Maximum number of results to return (default: 10, range: 1-100)
-                     Use lower values for faster response when exact matches are expected
+        Notes:
+            - This tool only searches the product catalog and does not provide
+              inventory or availability information
+            - Results are cached for 15 minutes to improve performance
+            - The search index updates every 6 hours, so very recent products may not appear
+            - For real-time inventory status, use a separate inventory check tool
 
-    Returns:
-        A list of matching product records, each containing:
-        - id: Unique product identifier (string)
-        - name: Product name (string)
-        - description: Detailed product description (string)
-        - price: Current price in USD (float)
-        - category: Product category hierarchy (list)
-    """
+        Args:
+            query: The search string (product name, category, or keywords)
+                   Example: "red running shoes" or "smartphone charger"
+            max_results: Maximum number of results to return (default: 10, range: 1-100)
+                         Use lower values for faster response when exact matches are expected
 
-    # Implementation
-    pass
-```
+        Returns:
+            A list of matching product records, each containing:
+            - id: Unique product identifier (string)
+            - name: Product name (string)
+            - description: Detailed product description (string)
+            - price: Current price in USD (float)
+            - category: Product category hierarchy (list)
+        """
+
+        # Implementation
+        pass
+    ```
+
+=== "TypeScript"
+
+    ```typescript
+    --8<-- "user-guide/concepts/tools/tools.ts:search_database"
+    ```

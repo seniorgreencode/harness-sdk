@@ -63,6 +63,7 @@ model = NovaAPIModel(
 ```
 
 **Supported Parameters in `params`:**
+
 - `max_tokens` (int): Maximum tokens to generate (deprecated, use max_completion_tokens)
 - `max_completion_tokens` (int): Maximum tokens to generate
 - `temperature` (float): Controls randomness (0.0 = deterministic, 1.0 = maximum randomness)

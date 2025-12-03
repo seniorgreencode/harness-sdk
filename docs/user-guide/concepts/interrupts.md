@@ -163,7 +163,7 @@ agent = Agent(
 Tool interrupts work similiarly to hook interrupts with only a few notable differences:
 
 - `tool_context`: Strands object that defines the interrupt call
-    - You can learn more about `tool_context` [here](./tools/python-tools.md#toolcontext).
+    - You can learn more about `tool_context` [here](./tools/custom-tools.md#toolcontext).
 - `tool_context.interrupt` - Raises an interrupt with a unique name and optional reason
     - The `name` must be unique only among interrupt calls configured in the same tool definition. It is still advisable however to namespace your interrupts so as to more easily distinguish the calls when constructing responses outside the agent.
 
