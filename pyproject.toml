@@ -12,6 +12,6 @@ dependencies = [
     "mkdocs-material~=9.6.12",
     "mkdocstrings-python~=1.16.10",
     "mkdocs-llmstxt~=0.2.0",
-    "strands-agents>=1.6.0",
+    "strands-agents>=1.19.0",
     "pymdown-extensions>=10.16.1",
 ]

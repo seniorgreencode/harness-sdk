@@ -8,23 +8,24 @@ A model provider is a service or platform that hosts and serves large language m
 
 The following table shows all model providers supported by Strands Agents SDK and their availability in Python and TypeScript:
 
-| Provider | Python Support | TypeScript Support |
-|----------|----------------|-------------------|
+| Provider                                     | Python Support | TypeScript Support |
+|----------------------------------------------|----------------|-------------------|
 | [Custom Providers](custom_model_provider.md) | ✅ | ✅ |
-| [Amazon Bedrock](amazon-bedrock.md) | ✅ | ✅ |
-| [OpenAI](openai.md) | ✅ | ✅ |
-| [Anthropic](anthropic.md) | ✅ | ❌ |
-| [Gemini](gemini.md) | ✅ | ❌ |
-| [LiteLLM](litellm.md) | ✅ | ❌ |
-| [llama.cpp](llamacpp.md) | ✅ | ❌ |
-| [LlamaAPI](llamaapi.md) | ✅ | ❌ |
-| [MistralAI](mistral.md) | ✅ | ❌ |
-| [Ollama](ollama.md) | ✅ | ❌ |
-| [SageMaker](sagemaker.md) | ✅ | ❌ |
-| [Writer](writer.md) | ✅ | ❌ |
-| [Cohere](cohere.md) | ✅ | ❌ |
-| [CLOVA Studio](clova-studio.md) | ✅ | ❌ |
-| [FireworksAI](fireworksai.md) | ✅ | ❌ |
+| [Amazon Bedrock](amazon-bedrock.md)          | ✅ | ✅ |
+| [Amazon Nova](amazon-nova.md)                | ✅ | ❌ |
+| [OpenAI](openai.md)                          | ✅ | ✅ |
+| [Anthropic](anthropic.md)                    | ✅ | ❌ |
+| [Gemini](gemini.md)                          | ✅ | ❌ |
+| [LiteLLM](litellm.md)                        | ✅ | ❌ |
+| [llama.cpp](llamacpp.md)                     | ✅ | ❌ |
+| [LlamaAPI](llamaapi.md)                      | ✅ | ❌ |
+| [MistralAI](mistral.md)                      | ✅ | ❌ |
+| [Ollama](ollama.md)                          | ✅ | ❌ |
+| [SageMaker](sagemaker.md)                    | ✅ | ❌ |
+| [Writer](writer.md)                          | ✅ | ❌ |
+| [Cohere](cohere.md)                          | ✅ | ❌ |
+| [CLOVA Studio](clova-studio.md)              | ✅ | ❌ |
+| [FireworksAI](fireworksai.md)                | ✅ | ❌ |
 
 ## Getting Started
 

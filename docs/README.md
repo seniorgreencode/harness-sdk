@@ -93,10 +93,4 @@ Ready to learn more? Check out these resources:
 
 !!! tip "Join Our Community"
 
-    === "Python"
-
-        [Learn how to contribute]({{ py_sdk_repo_home }}/CONTRIBUTING.md) or join our community discussions to shape the future of Strands Agents ❤️.
-
-    === "Typescript"
-
-        [Learn how to contribute]({{ ts_sdk_repo_home }}/CONTRIBUTING.md) or join our community discussions to shape the future of Strands Agents ❤️.
+    Learn how to contribute to our [Python]({{ py_sdk_repo_home }}/CONTRIBUTING.md) or [TypeScript]({{ ts_sdk_repo_home }}/CONTRIBUTING.md) SDKs, or join our community discussions to shape the future of Strands Agents ❤️.
