@@ -209,8 +209,6 @@ nav:
 
   - Community:
       - Community Packages: community/community-packages.md
-      - Tools:
-        - UTCP: community/tools/utcp.md
       - Integrations:
         - AG-UI: community/integrations/ag-ui.md
       - Model Providers:
@@ -218,7 +216,15 @@ nav:
         - CLOVA Studio: community/model-providers/clova-studio.md
         - Fireworks AI: community/model-providers/fireworksai.md
       - Session Managers:
-          - Amazon AgentCore Memory: community/session-managers/agentcore-memory.md
+        - Amazon AgentCore Memory: community/session-managers/agentcore-memory.md
+      - Tool Protocols:
+        - UTCP: community/tools/utcp.md
+      - Tools:
+        - deepgram: community/tools/strands-deepgram.md
+        - hubspot: community/tools/strands-hubspot.md
+        - teams: community/tools/strands-teams.md
+        - telegram: community/tools/strands-telegram.md
+        - telegram-listener: community/tools/strands-telegram-listener.md
 
   - Contribute ❤️: https://github.com/strands-agents/sdk-python/blob/main/CONTRIBUTING.md
   - Python API:
