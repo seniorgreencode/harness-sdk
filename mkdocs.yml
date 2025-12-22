@@ -4,6 +4,7 @@ site_dir: site
 site_url: https://strandsagents.com
 
 repo_url: https://github.com/strands-agents/sdk-python
+edit_uri: https://github.com/strands-agents/docs/edit/main/docs
 
 theme:
   name: material
@@ -31,6 +32,7 @@ theme:
     admonition:
       code: material/code-json
   features:
+    - content.action.edit
     - content.code.copy
     - content.tabs.link
     - content.code.select
