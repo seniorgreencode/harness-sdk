@@ -211,7 +211,7 @@ Build your own tools using the Strands SDK's tool interfaces. Both Python and Ty
 
 === "Python"
 
-    Define any Python function as a tool by using the [`@tool`](../../../api-reference/tools.md#strands.tools.decorator.tool) decorator. Function decorated tools can be placed anywhere in your codebase and imported in to your agent's list of tools. 
+    Define any Python function as a tool by using the [`@tool`](../../../api-reference/python/tools/decorator.md#strands.tools.decorator.tool) decorator. Function decorated tools can be placed anywhere in your codebase and imported in to your agent's list of tools. 
 
     ```python
     import asyncio

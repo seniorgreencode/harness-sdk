@@ -201,5 +201,5 @@ Users can pass their own custom OpenAI client to the OpenAIModel for Strands Age
 
 ## References
 
-- [API](../../../api-reference/models.md)
+- [API](../../../api-reference/python/models/model.md)
 - [OpenAI](https://platform.openai.com/docs/overview)

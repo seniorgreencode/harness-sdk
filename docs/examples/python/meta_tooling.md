@@ -47,7 +47,7 @@ The system prompt guides the agent in proper tool creation. The [TOOL_BUILDER_SY
 
   -  **Tool Naming Convention**: Provides the naming convention to use when building new custom tools.
 
-  -  **Tool Structure**: Enforces a standardized structure for all tools, making it possible for the agent to generate valid tools based on the `TOOL_SPEC` [provided](../../user-guide/concepts/tools/custom-tools.md#modules-as-tools). 
+  -  **Tool Structure**: Enforces a standardized structure for all tools, making it possible for the agent to generate valid tools based on the `TOOL_SPEC` [provided](../../user-guide/concepts/tools/custom-tools.md#module-based-tools-python-only). 
 
 
 ```python

@@ -229,33 +229,14 @@ nav:
         - telegram-listener: community/tools/strands-telegram-listener.md
 
   - Contribute ❤️: https://github.com/strands-agents/sdk-python/blob/main/CONTRIBUTING.md
-  - Python API:
-    - Agent: api-reference/agent.md
-    - Event Loop: api-reference/event-loop.md
-    - Handlers: api-reference/handlers.md
-    - Hooks: api-reference/hooks.md
-    - Interrupt: api-reference/interrupt.md
-    - Models: api-reference/models.md
-    - Multiagent: api-reference/multiagent.md
-    - Session: api-reference/session.md
-    - Telemetry: api-reference/telemetry.md
-    - Tools: api-reference/tools.md
-    - Types: api-reference/types.md
-    - Experimental:
-      - Agent Config: api-reference/experimental/agent_config.md
-      - Hooks: api-reference/experimental/hooks.md
-      - Bidirectional Streaming:
-        - Agent: api-reference/experimental/bidi/agent.md
-        - IO: api-reference/experimental/bidi/io.md
-        - Models: api-reference/experimental/bidi/models.md
-        - Tools: api-reference/experimental/bidi/tools.md
-        - Types: api-reference/experimental/bidi/types.md
+  - Python API: []
   - TypeScript API: api-reference/typescript/index.html
 
 exclude_docs: |
   node_modules
   .venv
   _dependencies
+  !.lycheeignore
 
 plugins:
   - search
@@ -282,11 +263,15 @@ plugins:
           - community/**/*.md
         Examples:
           - examples/**/*.md
-        API Reference:
-          - api-reference/*.md
+        Python API:
+          - docs/api-reference/python/**/*.md
+        TypeScript API:
+          - docs/api-reference/typescript/*.html
+
 
 hooks:
   - build-ts-docs.py
+  - build-py-docs.py
 extra:
   social:
     - icon: fontawesome/brands/github

@@ -143,7 +143,7 @@ agent.model = OpenAIModel(
 The `config_to_agent` function accepts:
 
 - `config`: Either a file path (string) or configuration dictionary
-- `**kwargs`: Additional [Agent constructor parameters](../../../api-reference/agent.md#strands.agent.agent.Agent.__init__) that override config values
+- `**kwargs`: Additional [Agent constructor parameters](../../../api-reference/python/agent/agent.md#strands.agent.agent.Agent.__init__) that override config values
 
 ```python
 # Override config values with valid agent parameters
