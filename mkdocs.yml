@@ -227,6 +227,7 @@ nav:
         - Nebius Token Factory: community/model-providers/nebius-token-factory.md
         - NVIDIA NIM: community/model-providers/nvidia-nim.md
         - SGLang: community/model-providers/sglang.md
+        - MLX: community/model-providers/mlx.md
       - Session Managers:
         - Amazon AgentCore Memory: community/session-managers/agentcore-memory.md
       - Tool Protocols:
