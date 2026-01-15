@@ -218,6 +218,7 @@ nav:
 
   - Community:
       - Community Packages: community/community-packages.md
+      - Get Featured: community/get-featured.md
       - Integrations:
         - AG-UI: community/integrations/ag-ui.md
       - Model Providers:
