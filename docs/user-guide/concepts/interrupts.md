@@ -180,7 +180,7 @@ Strands enforces the following rules for tool interrupts:
 
 Users can session manage their interrupts and respond back at a later time under a new agent session. Additionally, users can session manage the responses to avoid repeated interrupts on subsequent tool calls.
 
-```Python
+```python
 ##### server.py #####
 
 import json
