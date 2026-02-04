@@ -28,6 +28,6 @@
     "sourceMap": true,
     "removeComments": false,
   },
-  "include": ["docs/**/*.ts", ".astro/types.d.ts", "src/**/*"],
+  "include": ["docs/**/*.ts", ".astro/types.d.ts", "src/**/*", ".astro/**/*"],
   "exclude": ["node_modules", "dist", "docs/examples/cdk", "docs/examples/typescript"],
 }

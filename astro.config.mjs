@@ -4,6 +4,15 @@ import starlight from '@astrojs/starlight'
 import path from 'node:path'
 import remarkMkdocsSnippets from './src/plugins/remark-mkdocs-snippets.ts'
 
+import { loadSidebarFromMkdocs } from "./src/sidebar.ts"
+
+// Generate sidebar from mkdocs nav (validates against existing content files)
+// Top-level groups will be rendered as tabs by the custom Sidebar component
+const sidebar = loadSidebarFromMkdocs(
+  path.resolve('./mkdocs.yml'),
+  path.resolve('./src/content/docs')
+)
+
 // https://astro.build/config
 export default defineConfig({
   site: 'https://strandsagents.com',
@@ -20,6 +29,11 @@ export default defineConfig({
   integrations: [starlight({
     title: 'Strands Agents SDK',
     description: 'A model-driven approach to building AI agents in just a few lines of code.',
+    sidebar: sidebar,
+    routeMiddleware: './src/route-middleware.ts',
+    markdown: {
+      processedDirs: [path.resolve("../")]
+    },
     logo: {
       // TODO move once migration to CMS is complete
       light: './src/content/docs/assets/logo-light.svg',
