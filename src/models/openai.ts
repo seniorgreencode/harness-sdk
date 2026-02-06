@@ -575,8 +575,9 @@ export class OpenAIModel extends Model<OpenAIModelConfig> {
                     break
                   }
                   case 'imageSourceBytes': {
-                    const base64 = encodeBase64(String.fromCharCode(...imageBlock.source.bytes))
+                    const base64 = encodeBase64(imageBlock.source.bytes)
                     const mimeType = getMimeType(imageBlock.format) || `image/${imageBlock.format}`
+
                     contentParts.push({
                       type: 'image_url',
                       image_url: {
@@ -599,7 +600,8 @@ export class OpenAIModel extends Model<OpenAIModelConfig> {
                 switch (docBlock.source.type) {
                   case 'documentSourceBytes': {
                     const mimeType = getMimeType(docBlock.format) || `application/${docBlock.format}`
-                    const base64 = encodeBase64(String.fromCharCode(...docBlock.source.bytes))
+                    const base64 = encodeBase64(docBlock.source.bytes)
+
                     const file: OpenAI.Chat.Completions.ChatCompletionContentPart.File = {
                       type: 'file',
                       file: {

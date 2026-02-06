@@ -6,9 +6,9 @@ import { z } from 'zod'
 
 import { collectGenerator } from '$/sdk/__fixtures__/model-test-helpers.js'
 import { loadFixture } from './__fixtures__/test-helpers.js'
-
 // Import fixtures using Vite's ?url suffix
 import yellowPngUrl from './__resources__/yellow.png?url'
+import letterPdfUrl from './__resources__/letter.pdf?url'
 // TODO: Add gemini back to agent tests once tool and media support is implemented
 import { allProviders as realAllProviders, gemini } from './__fixtures__/model-providers.js'
 
@@ -166,6 +166,37 @@ describe.each(allProviders)('Agent with $name', ({ name, skip, createModel }) =>
         expect(textContent).toBeDefined()
         expect(textContent?.text).toMatch(/zebra/i)
         expect(textContent?.text).toMatch(/yellow/i)
+      })
+
+      it('processes PDF document input correctly', async () => {
+        const pdfBytes = await loadFixture(letterPdfUrl)
+
+        const agent = new Agent({
+          model: createModel(),
+          messages: [
+            new Message({
+              role: 'user',
+              content: [
+                new DocumentBlock({
+                  name: 'letter',
+                  format: 'pdf',
+                  source: { bytes: pdfBytes },
+                }),
+                new TextBlock('Summarize this document briefly.'),
+              ],
+            }),
+          ],
+          printer: false,
+        })
+
+        const result = await agent.invoke([])
+
+        expect(result.stopReason).toBe('endTurn')
+        expect(result.lastMessage.role).toBe('assistant')
+
+        const textContent = result.lastMessage.content.find((block) => block.type === 'textBlock')
+        expect(textContent).toBeDefined()
+        expect(textContent?.text.length).toBeGreaterThan(10)
       })
     })
 
