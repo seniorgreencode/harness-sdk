@@ -1,26 +1,19 @@
-import { defineCollection } from 'astro:content';
-import { docsLoader, } from '@astrojs/starlight/loaders';
+import { defineCollection } from 'astro:content'
+import { docsLoader } from '@astrojs/starlight/loaders'
 import { z } from 'astro/zod'
-// import { docsSchema } from '@astrojs/starlight/schema';
-
-// CMS TEMP: Once we have titles as required fields, we can use the default field
-const slimSchema = z.object({
-  title: z.string().optional(),
-  head: z.array(z.object({})).default([]),
-  sidebar: z
-    .object({
-      hidden: z.boolean().default(false),
-    })
-    .default({}),
-  /**
-   * Indicates that this page is a draft and will not be included in production builds.
-   * Note that the page will still be available when running Astro in development mode.
-   */
-  draft: z.boolean().default(false),
-})
+import { docsSchema } from '@astrojs/starlight/schema'
 
 export const collections = {
-	docs: defineCollection({ loader: docsLoader(), schema: slimSchema}),
-};
-
-
+  docs: defineCollection({
+    loader: docsLoader(),
+    schema: docsSchema({
+      // We have certain flags/behavior based on the following properties; see CMS-README.md for more info
+      extend: z.object({
+        // Can be a single value or an array of supported values
+        languages: z.union([z.string(), z.array(z.string())]).optional(),
+        community: z.boolean().default(false),
+        experimental: z.boolean().default(false),
+      }),
+    }),
+  }),
+}

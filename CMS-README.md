@@ -74,3 +74,120 @@ export default defineConfig({
 **Current approach:** Source control keeps files in MkDocs format. The script runs at build time to transform them. Once migration is complete, we'll do a final conversion, remove the script, and commit the transformed files directly.
 
 For detailed information about what transformations the script performs (and what's planned), see [`scripts/update-docs.md`](scripts/update-docs.md).
+
+## Custom Frontmatter Fields
+
+The documentation extends Starlight's default schema with custom fields that automatically render contextual banners at the top of pages.
+
+### `languages`
+
+Indicates a feature is only available in specific SDK languages.
+
+```yaml
+---
+title: My Feature
+languages: Python
+---
+```
+
+Renders a note aside: "This provider is only supported in {languages}."
+
+### `community`
+
+Marks a page as community-contributed content.
+
+```yaml
+---
+title: Community Tool
+community: true
+---
+```
+
+Renders a tip aside explaining the package is community-maintained, not officially supported.
+
+### `experimental`
+
+Marks a feature as experimental.
+
+```yaml
+---
+title: Experimental Feature
+experimental: true
+---
+```
+
+Renders a tip aside warning the feature may change in future versions.
+
+### Rendering Order
+
+When multiple fields are set, banners render top to bottom: experimental → community → languages.
+
+### Sidebar Badges
+
+Pages can display badges in sidebar navigation:
+
+```yaml
+---
+title: My Page
+sidebar:
+  badge:
+    text: Community
+    variant: note
+---
+```
+
+Available variants: `note`, `tip`, `caution`, `danger`, `success`, `default`
+
+## MDX Components
+
+Documentation pages use MDX format and can import [Starlight components](https://starlight.astro.build/components/using-components/):
+
+```mdx
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+<Tabs>
+  <TabItem label="Python">Python code here</TabItem>
+  <TabItem label="TypeScript">TypeScript code here</TabItem>
+</Tabs>
+```
+
+Available: `Tabs`/`TabItem`, `Aside`, `Card`/`CardGrid`, `LinkCard`, `Icon`, `Badge`
+
+### Auto-Imported Components
+
+We use [astro-auto-import](https://github.com/delucis/astro-auto-import) to make `Tabs` and `Tab` available globally without explicit imports. Since language tabs appear on nearly every page, this reduces boilerplate.
+
+```mdx
+<!-- No import needed — just use directly -->
+<Tabs>
+  <Tab label="Python">pip install strands</Tab>
+  <Tab label="TypeScript">npm install @strands-agents/sdk</Tab>
+</Tabs>
+```
+
+`Tabs` maps to our `AutoSyncTabs` component (auto-syncs tabs with matching labels), and `Tab` maps to Starlight's `TabItem`.
+
+For other components, use [explicit imports](https://starlight.astro.build/components/using-components/).
+
+## Custom Components (`src/components/`)
+
+### `AutoSyncTabs`
+
+A wrapper around Starlight's `Tabs` that auto-generates a `syncKey` from tab labels. Tabs with identical label sets automatically sync together across the page. Auto-imported as `Tabs` (see above).
+
+### Starlight Overrides (`src/components/overrides/`)
+
+These override default Starlight components:
+
+- **`Head.astro`**: Adds Mermaid diagram support by transforming code blocks with `language="mermaid"` into rendered diagrams.
+- **`MarkdownContent.astro`**: Injects the custom frontmatter banners (experimental, community, languages) at the top of page content.
+
+### Internal Aside Components
+
+Used by `MarkdownContent.astro` to render frontmatter banners:
+
+- `ExperimentalAside.astro`
+- `CommunityContributionAside.astro`
+- `LanguageSupportAside.astro`
+
+These are not meant to be imported directly in MDX files—use the frontmatter fields instead.

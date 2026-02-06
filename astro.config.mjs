@@ -5,6 +5,7 @@ import path from 'node:path'
 import remarkMkdocsSnippets from './src/plugins/remark-mkdocs-snippets.ts'
 
 import { loadSidebarFromMkdocs } from "./src/sidebar.ts"
+import AutoImport from 'astro-auto-import'
 
 // Generate sidebar from mkdocs nav (validates against existing content files)
 // Top-level groups will be rendered as tabs by the custom Sidebar component
@@ -51,7 +52,21 @@ export default defineConfig({
       baseUrl: 'https://github.com/strands-agents/docs/edit/main/docs',
     },
     components: {
-      Head: './src/components/Head.astro',
+      Head: './src/components/overrides/Head.astro',
+      MarkdownContent: './src/components/overrides/MarkdownContent.astro'
     },
-  })],
+  }),
+  AutoImport({
+      imports: [
+        {
+          '@astrojs/starlight/components': [
+            ['TabItem', 'Tab']
+          ],
+          './src/components/AutoSyncTabs.astro': [
+            ['default', "Tabs"]
+          ]
+        },
+      ],
+    })
+  ],
 })
