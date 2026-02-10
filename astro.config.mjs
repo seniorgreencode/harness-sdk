@@ -17,6 +17,7 @@ const sidebar = loadSidebarFromMkdocs(
 // https://astro.build/config
 export default defineConfig({
   site: 'https://strandsagents.com',
+  base: process.env.ASTRO_BASE_PATH || '/',
   vite: {
     // TODO once we separate out CMS build from TS verification, fix this
     // https://github.com/withastro/astro/issues/14117
