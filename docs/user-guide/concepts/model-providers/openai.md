@@ -15,7 +15,7 @@ OpenAI is configured as an optional dependency in Strands Agents. To install, ru
 === "TypeScript"
 
     ```bash
-    npm install @strands-agents/sdk
+    npm install @strands-agents/sdk openai
     ```
 
 ## Usage

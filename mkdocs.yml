@@ -96,6 +96,7 @@ nav:
         - State: user-guide/concepts/agents/state.md
         - Session Management: user-guide/concepts/agents/session-management.md
         - Prompts: user-guide/concepts/agents/prompts.md
+        - Retry Strategies: user-guide/concepts/agents/retry-strategies.md
         - Hooks: user-guide/concepts/agents/hooks.md
         - Structured Output: user-guide/concepts/agents/structured-output.md
         - Conversation Management: user-guide/concepts/agents/conversation-management.md
@@ -124,6 +125,7 @@ nav:
         - CLOVA Studio<sup> community</sup>: user-guide/concepts/model-providers/clova-studio.md
         - FireworksAI<sup> community</sup>: user-guide/concepts/model-providers/fireworksai.md
         - Nebius Token Factory<sup> community</sup>: user-guide/concepts/model-providers/nebius-token-factory.md
+        - xAI<sup> community</sup>: user-guide/concepts/model-providers/xai.md
       - Streaming:
         - Overview: user-guide/concepts/streaming/index.md
         - Async Iterators: user-guide/concepts/streaming/async-iterators.md
@@ -148,7 +150,6 @@ nav:
         - Interruptions: user-guide/concepts/bidirectional-streaming/interruption.md
         - Hooks: user-guide/concepts/bidirectional-streaming/hooks.md
         - Session Management: user-guide/concepts/bidirectional-streaming/session-management.md
-        - Observability: user-guide/concepts/bidirectional-streaming/otel.md
       - Experimental:
         - AgentConfig: user-guide/concepts/experimental/agent-config.md
         - Steering: user-guide/concepts/experimental/steering.md
@@ -191,6 +192,7 @@ nav:
           - TypeScript: user-guide/deploy/deploy_to_bedrock_agentcore/typescript.md
       - AWS Lambda<sup> new</sup>: user-guide/deploy/deploy_to_aws_lambda.md
       - AWS Fargate: user-guide/deploy/deploy_to_aws_fargate.md
+      - AWS App Runner: user-guide/deploy/deploy_to_aws_apprunner.md
       - Amazon EKS: user-guide/deploy/deploy_to_amazon_eks.md
       - Amazon EC2: user-guide/deploy/deploy_to_amazon_ec2.md
       - Docker:
@@ -230,6 +232,7 @@ nav:
         - SGLang: community/model-providers/sglang.md
         - vLLM: community/model-providers/vllm.md
         - MLX: community/model-providers/mlx.md
+        - xAI: community/model-providers/xai.md
       - Session Managers:
         - Amazon AgentCore Memory: community/session-managers/agentcore-memory.md
         - Valkey/Redis: community/session-managers/strands-valkey-session-manager.md
