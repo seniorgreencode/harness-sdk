@@ -99,3 +99,67 @@ The tradeoff is that `HookProvider` exposure can leak implementation details for
 
 - The capability requires responding to multiple distinct lifecycle events
 - Users need to customize which events to subscribe to or add callbacks beyond base class defaults
+
+
+## Pay for Play: Opt-In Breaking Changes Are Acceptable
+
+**Date**: Jan 28, 2026
+
+### Decision
+
+Small breaking changes that follow the "pay for play" principle are acceptable without a major version bump. Programs can call new APIs to access new features, but programs that choose not to do so are unaffected — old code continues to work as it did before.
+
+### Rationale
+
+Strict semver adherence can slow SDK development when the breaking change only affects users who explicitly adopt new functionality. If existing code paths remain unaffected, the practical impact on users is minimal.
+
+For example, converting a `TypedDict` to `total=False` is technically breaking change - code that creates instances of that `TypedDict` without the new field will still work, but code that *reads* from the `TypedDict` and expects the field to always be present would break. However, if the old field is only missing when using a new tool, users who don't adopt that tool never encounter the missing field. The break is "pay for play": you only see it if you opt into the new functionality.
+
+This applies when the breaking change is gated behind new functionality — users who don't touch the new feature never see the break, and those who do will find the breakage more obvious since it's tied to something they just added.
+
+This doesn't apply when existing code breaks without any user action, or when the change affects default behavior. If someone upgrades and their code stops working with no obvious reason why, that's a bad experience we want to avoid.
+
+See also: [Raymond Chen on "pay for play" in API design](https://devblogs.microsoft.com/oldnewthing/20260127-00/?p=112018)
+
+
+## Provide Both Low-Level and High-Level APIs
+
+**Date**: Jan 30, 2026
+
+### Decision
+
+When introducing new features, we SHOULD provide both low-level APIs that offer fine-grained control and high-level APIs that simplify common use cases. Low-level APIs serve as building blocks for power users and edge cases, while high-level APIs guide most users toward the happy path with opinionated defaults.
+
+### Rationale
+
+Our tenets emphasize being **extensible by design** and **simple at any scale**. These goals can appear to conflict: maximum extensibility often requires exposing implementation details, while simplicity favors hiding them. A tiered API approach resolves this tension.
+
+**Low-level APIs** provide fine-grained control, building blocks for custom implementations, and escape hatches for edge cases. They require deeper understanding of the underlying concepts but enable use cases the high-level API doesn't anticipate.
+
+**High-level APIs** provide opinionated defaults for common use cases and reduced cognitive load. They push users toward the pit of success — the easy path is also the correct path. Most users should reach for these first.
+
+For example, `BidiAgent` exposes `send`/`receive` as low-level APIs. Using them directly requires managing concurrency, lifecycle, and event routing:
+
+```python
+await agent.start()
+
+async def read_input():
+    while True:
+        event = await input_source.read()
+        await agent.send(event)
+
+asyncio.create_task(read_input())
+
+async for event in agent.receive():
+    ...
+
+await agent.stop()
+```
+
+The `run` method builds on these to abstract the complexity. Users provide IO callbacks and the method handles the rest:
+
+```python
+await agent.run(inputs=[audio_input], outputs=[audio_output, text_output])
+```
+
+This pattern aligns with progressive disclosure from UX design: show users what they need for common tasks while making advanced capabilities discoverable when needed.
