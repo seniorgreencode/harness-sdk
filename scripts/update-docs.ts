@@ -20,6 +20,7 @@ const EXPLICIT_TITLES: Record<string, string> = {
   "user-guide/concepts/model-providers/clova-studio.md": "Clova Studio",
   "user-guide/concepts/model-providers/cohere.md": "Cohere",
   "user-guide/concepts/model-providers/fireworksai.md": "Fireworks AI",
+  "user-guide/concepts/model-providers/xai.md": "xAI",
   "user-guide/concepts/model-providers/nebius-token-factory.md": "Nebius Token Factory",
 };
 
