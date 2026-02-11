@@ -32,9 +32,10 @@
   "devDependencies": {
     "@astrojs/starlight": "^0.37.3",
     "@types/js-yaml": "^4.0.9",
+    "@types/mdast": "^4.0.4",
     "@types/node": "^24.10.1",
+    "acorn": "^8.14.0",
     "astro": "^5.6.1",
-    "astro-auto-import": "^0.5.1",
     "js-yaml": "^4.1.1",
     "pino": "^9.7.0",
     "pino-pretty": "^13.0.0",

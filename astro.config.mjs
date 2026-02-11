@@ -5,7 +5,9 @@ import path from 'node:path'
 import remarkMkdocsSnippets from './src/plugins/remark-mkdocs-snippets.ts'
 
 import { loadSidebarFromMkdocs } from "./src/sidebar.ts"
-import AutoImport from 'astro-auto-import'
+import AutoImport from './src/plugins/astro-auto-import.ts'
+import astroExpressiveCode from "astro-expressive-code"
+import mdx from '@astrojs/mdx';
 
 // Generate sidebar from mkdocs nav (validates against existing content files)
 // Top-level groups will be rendered as tabs by the custom Sidebar component
@@ -18,6 +20,7 @@ const sidebar = loadSidebarFromMkdocs(
 export default defineConfig({
   site: 'https://strandsagents.com',
   base: process.env.ASTRO_BASE_PATH || '/',
+  trailingSlash: 'always',
   vite: {
     // TODO once we separate out CMS build from TS verification, fix this
     // https://github.com/withastro/astro/issues/14117
@@ -28,7 +31,10 @@ export default defineConfig({
   markdown: {
     remarkPlugins: [remarkMkdocsSnippets],
   },
-  integrations: [starlight({
+  integrations: [
+    astroExpressiveCode(),
+    mdx(),
+    starlight({
     title: 'Strands Agents SDK',
     description: 'A model-driven approach to building AI agents in just a few lines of code.',
     sidebar: sidebar,
@@ -68,6 +74,10 @@ export default defineConfig({
           ]
         },
       ],
+      defaultComponents: {
+        // override 'a' links so that we can use relative urls
+        a: './src/components/PageLink.astro'
+      }
     })
   ],
 })

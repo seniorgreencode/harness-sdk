@@ -1,0 +1,35 @@
+---
+import { getCollection } from 'astro:content'
+import { resolveHref } from '../util/links'
+
+interface Props {
+  href: string
+  [key: string]: any
+}
+
+const { href, ...rest } = Astro.props
+
+// Get all docs for lookup
+const allDocs = await getCollection('docs')
+const docSlugs = new Set(allDocs.map((doc) => doc.id))
+
+// Resolve the href
+const currentPath = Astro.url.pathname
+const { resolvedHref, found } = resolveHref(href, currentPath, docSlugs)
+
+// Log warning in development if link wasn't found
+if (!found) {
+  if (!href.includes("/api-reference/")) {
+    const route = Astro.locals.starlightRoute
+    console.warn([
+      `[PageLink] On page "${route?.entry?.filePath}"`,
+      `could not resolve "${href}"`,
+      `currentPath: "${currentPath}"`,
+    ].join(', '))
+  }
+}
+---
+
+<a href={resolvedHref} {...rest}>
+  <slot />
+</a>

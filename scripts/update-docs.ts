@@ -3,12 +3,14 @@ import { join } from "path";
 import { updateQuickstart } from "./update-quickstart.js";
 import { getCommunityLabeledFiles } from "../src/sidebar.js";
 
-const DOCS_DIR = "src/content/docs";
+const DOCS_DIR = "docs";
 const MKDOCS_PATH = "mkdocs.yml";
 const INFO_BLOCK_PATTERN = '!!! info "Language Support"';
 const INFO_BLOCK_CONTENT = "    This provider is only supported in Python.";
 const COMMUNITY_BANNER = "{{ community_contribution_banner }}";
 const SKIP_FILES: string[] = [];
+// Skip index files in examples directory (they're not included in the content collection)
+const SKIP_PATTERNS = [/examples\/.*\/index\.md$/];
 
 // Files that need explicit titles because they don't have H1 headings
 const EXPLICIT_TITLES: Record<string, string> = {
@@ -686,6 +688,12 @@ async function main() {
   for (const file of files) {
     // Skip special-cased files
     if (SKIP_FILES.some((skip) => file.endsWith(skip))) {
+      continue;
+    }
+    
+    // Skip files matching skip patterns (e.g., index files in examples)
+    if (SKIP_PATTERNS.some((pattern) => pattern.test(file))) {
+      console.log(`⊘ Skipped (pattern): ${file}`);
       continue;
     }
 

@@ -40,6 +40,29 @@ const example = "This code will be included"
 // --8<-- [end:section_name]
 ```
 
+### 4. Relative Link Resolution (`src/util/links.ts`, `src/components/PageLink.astro`)
+
+**What it does:** Converts MkDocs-style relative file links to Astro slug-based URLs at render time.
+
+**Why:** MkDocs uses relative links to files (e.g., `../tools/custom-tools.md`), while Astro uses slugs by default and doesn't validate internal links. Rather than rewriting all links to use slugs, we override the default `<a>` element to resolve relative paths automatically. This provides a better authoring experience—linking to files feels more natural than memorizing slug paths.
+
+**How it works:**
+
+1. `PageLink.astro` replaces the default anchor element via `astro-auto-import`
+2. When rendering a link, it checks if the href is relative (not absolute, not anchor-only)
+3. For relative links, it resolves the path against the current page's location using `src/util/links.ts`
+4. The resolved path is matched against the content collection to find the correct slug
+5. If no match is found, a warning is logged during development
+
+**Example resolution:**
+
+From page `user-guide/concepts/agents/state.mdx`:
+- `conversation-management.md` → `/user-guide/concepts/agents/conversation-management/`
+- `../tools/custom-tools.md` → `/user-guide/concepts/tools/custom-tools/`
+- `../tools/index.md` → `/user-guide/concepts/tools/`
+
+**Slug generation:** The content collection uses a custom `generateId` function in `src/content.config.ts` that shares the same normalization logic (`normalizePathToSlug`) as link resolution. This ensures consistency between how pages are identified and how links resolve to them.
+
 ## Configuration (`astro.config.mjs`)
 
 The main config ties everything together:
@@ -47,6 +70,7 @@ The main config ties everything together:
 ```javascript
 import { loadSidebarFromMkdocs } from "./src/sidebar.ts"
 import remarkMkdocsSnippets from './src/plugins/remark-mkdocs-snippets.ts'
+import AutoImport from 'astro-auto-import'
 
 const sidebar = loadSidebarFromMkdocs(
   path.resolve('./mkdocs.yml'),
@@ -57,11 +81,20 @@ export default defineConfig({
   markdown: {
     remarkPlugins: [remarkMkdocsSnippets],
   },
-  integrations: [starlight({
-    sidebar: sidebar,
-    routeMiddleware: './src/route-middleware.ts',
-    // ...
-  })],
+  integrations: [
+    starlight({
+      sidebar: sidebar,
+      routeMiddleware: './src/route-middleware.ts',
+      // ...
+    }),
+    AutoImport({
+      imports: [/* ... */],
+      defaultComponents: {
+        // Override anchor elements for relative link resolution
+        a: './src/components/PageLink.astro'
+      }
+    })
+  ],
 })
 ```
 
@@ -174,6 +207,10 @@ For other components, use [explicit imports](https://starlight.astro.build/compo
 ### `AutoSyncTabs`
 
 A wrapper around Starlight's `Tabs` that auto-generates a `syncKey` from tab labels. Tabs with identical label sets automatically sync together across the page. Auto-imported as `Tabs` (see above).
+
+### `PageLink`
+
+Replaces the default anchor element to enable MkDocs-style relative linking. Resolves relative hrefs against the current page's path and validates against the content collection. Logs warnings in development for broken links. Auto-imported as the default `a` element.
 
 ### Starlight Overrides (`src/components/overrides/`)
 
