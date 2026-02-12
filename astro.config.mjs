@@ -39,13 +39,9 @@ export default defineConfig({
     description: 'A model-driven approach to building AI agents in just a few lines of code.',
     sidebar: sidebar,
     routeMiddleware: './src/route-middleware.ts',
-    markdown: {
-      processedDirs: [path.resolve("../")]
-    },
     logo: {
-      // TODO move once migration to CMS is complete
-      light: './src/content/docs/assets/logo-light.svg',
-      dark: './src/content/docs/assets/logo-dark.svg',
+      light: './src/assets/logo-light.svg',
+      dark: './src/assets/logo-dark.svg',
       replacesTitle: false,
     },
     social: [

@@ -1,9 +1,10 @@
-import { readdir, readFile, writeFile, rename } from "fs/promises";
-import { join } from "path";
+import { readdir, readFile, writeFile, mkdir, rm, unlink } from "fs/promises";
+import { join, dirname } from "path";
 import { updateQuickstart } from "./update-quickstart.js";
 import { getCommunityLabeledFiles } from "../src/sidebar.js";
 
 const DOCS_DIR = "docs";
+const OUTPUT_DIR = "src/content/docs";
 const MKDOCS_PATH = "mkdocs.yml";
 const INFO_BLOCK_PATTERN = '!!! info "Language Support"';
 const INFO_BLOCK_CONTENT = "    This provider is only supported in Python.";
@@ -56,6 +57,64 @@ async function getAllMarkdownFiles(dir: string): Promise<string[]> {
       if (entry.isDirectory()) {
         await walk(fullPath);
       } else if (entry.name.endsWith(".md")) {
+        files.push(fullPath);
+      }
+    }
+  }
+
+  await walk(dir);
+  return files;
+}
+
+async function getAllTypeScriptFiles(dir: string): Promise<string[]> {
+  const files: string[] = [];
+
+  async function walk(currentDir: string) {
+    const entries = await readdir(currentDir, { withFileTypes: true });
+    for (const entry of entries) {
+      const fullPath = join(currentDir, entry.name);
+      if (entry.isDirectory()) {
+        await walk(fullPath);
+      } else if (entry.name.endsWith(".ts")) {
+        files.push(fullPath);
+      }
+    }
+  }
+
+  await walk(dir);
+  return files;
+}
+
+async function getAllPythonFiles(dir: string): Promise<string[]> {
+  const files: string[] = [];
+
+  async function walk(currentDir: string) {
+    const entries = await readdir(currentDir, { withFileTypes: true });
+    for (const entry of entries) {
+      const fullPath = join(currentDir, entry.name);
+      if (entry.isDirectory()) {
+        await walk(fullPath);
+      } else if (entry.name.endsWith(".py")) {
+        files.push(fullPath);
+      }
+    }
+  }
+
+  await walk(dir);
+  return files;
+}
+
+async function getAllAssetFiles(dir: string): Promise<string[]> {
+  const files: string[] = [];
+  const assetExtensions = [".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp", ".ico", ".js", ".css"];
+
+  async function walk(currentDir: string) {
+    const entries = await readdir(currentDir, { withFileTypes: true });
+    for (const entry of entries) {
+      const fullPath = join(currentDir, entry.name);
+      if (entry.isDirectory()) {
+        await walk(fullPath);
+      } else if (assetExtensions.some((ext) => entry.name.toLowerCase().endsWith(ext))) {
         files.push(fullPath);
       }
     }
@@ -678,6 +737,16 @@ function processFile(content: string, explicitTitle?: string, hasCommunityLabel?
 
 async function main() {
   console.log(`Scanning ${DOCS_DIR} for markdown files...`);
+  console.log(`Output directory: ${OUTPUT_DIR}`);
+
+  // Clean and recreate output directory
+  try {
+    await rm(OUTPUT_DIR, { recursive: true });
+    console.log(`✓ Cleaned existing ${OUTPUT_DIR}`);
+  } catch {
+    // Directory doesn't exist, that's fine
+  }
+  await mkdir(OUTPUT_DIR, { recursive: true });
 
   // Load community-labeled files from mkdocs.yml nav
   const communityLabeledFiles = getCommunityLabeledFiles(MKDOCS_PATH);
@@ -707,23 +776,98 @@ async function main() {
     // Check if this file has a community label in the nav
     const hasCommunityLabel = communityLabeledFiles.has(relativePath);
     
-    const { modified, newContent } = processFile(content, explicitTitle, hasCommunityLabel);
+    const { newContent } = processFile(content, explicitTitle, hasCommunityLabel);
 
-    if (modified) {
-      await writeFile(file, newContent, "utf-8");
-      console.log(`✓ Processed: ${file}`);
-      processedCount++;
-    }
-
-    // Rename .md to .mdx
-    if (file.endsWith(".md")) {
-      const newPath = file.replace(/\.md$/, ".mdx");
-      await rename(file, newPath);
-      console.log(`✓ Renamed: ${file} → ${newPath}`);
-    }
+    // Determine output path (convert .md to .mdx and write to OUTPUT_DIR)
+    const outputRelativePath = relativePath.replace(/\.md$/, ".mdx");
+    const outputPath = join(OUTPUT_DIR, outputRelativePath);
+    
+    // Ensure output directory exists
+    await mkdir(dirname(outputPath), { recursive: true });
+    
+    // Write processed content to output directory
+    await writeFile(outputPath, newContent, "utf-8");
+    
+    // Delete the original source file
+    await unlink(file);
+    
+    console.log(`✓ ${relativePath} → ${outputRelativePath}`);
+    processedCount++;
   }
 
-  console.log(`\nDone! Processed ${processedCount} file(s) and renamed all .md files to .mdx.`);
+  console.log(`\nDone! Processed ${processedCount} markdown file(s) to ${OUTPUT_DIR}.`);
+
+  // Copy TypeScript files (used for code snippets)
+  const tsFiles = await getAllTypeScriptFiles(DOCS_DIR);
+  let tsCopiedCount = 0;
+
+  for (const file of tsFiles) {
+    const relativePath = file.replace(`${DOCS_DIR}/`, "");
+    const outputPath = join(OUTPUT_DIR, relativePath);
+
+    // Ensure output directory exists
+    await mkdir(dirname(outputPath), { recursive: true });
+
+    // Read and write the file (simple copy)
+    const content = await readFile(file, "utf-8");
+    await writeFile(outputPath, content, "utf-8");
+
+    // Delete the original source file
+    await unlink(file);
+
+    console.log(`✓ Copied: ${relativePath}`);
+    tsCopiedCount++;
+  }
+
+  console.log(`Copied ${tsCopiedCount} TypeScript file(s).`);
+
+  // Copy Python files (used for code snippets)
+  const pyFiles = await getAllPythonFiles(DOCS_DIR);
+  let pyCopiedCount = 0;
+
+  for (const file of pyFiles) {
+    const relativePath = file.replace(`${DOCS_DIR}/`, "");
+    const outputPath = join(OUTPUT_DIR, relativePath);
+
+    // Ensure output directory exists
+    await mkdir(dirname(outputPath), { recursive: true });
+
+    // Read and write the file (simple copy)
+    const content = await readFile(file, "utf-8");
+    await writeFile(outputPath, content, "utf-8");
+
+    // Delete the original source file
+    await unlink(file);
+
+    console.log(`✓ Copied: ${relativePath}`);
+    pyCopiedCount++;
+  }
+
+  console.log(`Copied ${pyCopiedCount} Python file(s).`);
+
+  // Copy asset files (images, JS, CSS, etc.)
+  const assetFiles = await getAllAssetFiles(DOCS_DIR);
+  let assetCopiedCount = 0;
+
+  for (const file of assetFiles) {
+    const relativePath = file.replace(`${DOCS_DIR}/`, "");
+    const outputPath = join(OUTPUT_DIR, relativePath);
+
+    // Ensure output directory exists
+    await mkdir(dirname(outputPath), { recursive: true });
+
+    // Read and write the file as binary
+    const content = await readFile(file);
+    await writeFile(outputPath, content);
+
+    // Delete the original source file
+    await unlink(file);
+
+    console.log(`✓ Copied asset: ${relativePath}`);
+    assetCopiedCount++;
+  }
+
+  console.log(`Copied ${assetCopiedCount} asset file(s).`);
 
   // Run special-case page updates
   await updateQuickstart();

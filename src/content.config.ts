@@ -10,7 +10,7 @@ import { normalizePathToSlug } from './util/links'
 export const collections = {
   docs: defineCollection({
     loader: glob({
-      base: "docs",
+      base: "src/content/docs",
       // We explicitly declare the folders we want to include, as otherwise it includes index.md files
       // in examples which are not intended to be rendered on the site.
       // Long-term we'll be moving examples into the sdk-python repository instead, solving this problem.

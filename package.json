@@ -16,7 +16,7 @@
     "cms:preview": "astro preview",
     "cms:test": "vitest run",
     "docs:update": "tsx scripts/update-docs.ts",
-    "docs:revert": "git checkout HEAD -- docs/ && git clean -d -f docs/",
+    "docs:revert": "git checkout HEAD -- docs/ && git clean -d -f src/content/docs",
     "astro": "astro"
   },
   "author": "",
