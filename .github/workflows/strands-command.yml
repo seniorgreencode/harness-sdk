@@ -27,7 +27,7 @@ jobs:
     permissions: read-all
     runs-on: ubuntu-latest
     outputs:
-      approval-env: ${{ steps.auth.outputs.result }}
+      approval-env: ${{ steps.auth.outputs.approval-env }}
     steps:
       - name: Check Authorization
         id: auth
@@ -88,7 +88,7 @@ jobs:
           evals_sqs_queue_arn: ${{ secrets.EVALS_SQS_QUEUE_ARN }}
 
   finalize:
-    if: always()
+    if: always() && (startsWith(github.event.comment.body, '/strands') || github.event_name == 'workflow_dispatch')
     needs: [setup-and-process, execute-readonly-agent]
     permissions:
       contents: write

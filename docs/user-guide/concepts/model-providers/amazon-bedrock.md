@@ -106,6 +106,22 @@ For production environments, it's recommended to scope down the `Resource` to sp
 
     For complete details on credential configuration and resolution, see the [boto3 credentials documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html#configuring-credentials).
 
+    **Option 4: aws login**
+
+    `aws login` provides browser-based authentication for temporary credentials. Requires AWS CLI version 2.32.0 or later.
+
+    ```bash
+    aws login
+    ```
+
+    To use `aws login` with enhanced performance, install botocore with CRT support:
+
+    ```bash
+    pip install botocore[crt]
+    ```
+
+    See the [Login for AWS local development using console credentials](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-sign-in.html) documentation for more details.
+
 === "TypeScript"
 
     The TypeScript SDK uses the [AWS SDK for JavaScript v3](https://docs.aws.amazon.com/sdk-for-javascript/v3/developer-guide/welcome.html) to make calls to Amazon Bedrock. The SDK has its own credential resolution system that determines which credentials to use when making requests to AWS.
@@ -427,7 +443,8 @@ As an alternative to providing media content as bytes, Amazon Bedrock supports r
         guardrail_redact_input=True,  # Default: True
         guardrail_redact_input_message="Blocked Input!", # Default: [User input redacted.]
         guardrail_redact_output=False,  # Default: False
-        guardrail_redact_output_message="Blocked Output!" # Default: [Assistant output redacted.]
+        guardrail_redact_output_message="Blocked Output!", # Default: [Assistant output redacted.]
+        guardrail_latest_message=True,  # Only evaluate the latest user message (default: False)
     )
 
     guardrail_agent = Agent(model=bedrock_model)
@@ -442,6 +459,9 @@ As an alternative to providing media content as bytes, Amazon Bedrock supports r
     - Input redaction (enabled by default): If a guardrail policy is triggered, the input is redacted
     - Output redaction (disabled by default): If a guardrail policy is triggered, the output is redacted
     - Custom redaction messages can be specified for both input and output redactions
+
+    !!! note "Latest Message Evaluation"
+        When `guardrail_latest_message=True`, only the most recent user message is sent to guardrails for evaluation instead of the entire conversation. This can improve performance and reduce costs in multi-turn conversations where earlier messages have already been validated.
 
 {{ ts_not_supported_code("Guardrails are not yet supported in the TypeScript SDK") }}
 

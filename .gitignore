@@ -23,3 +23,5 @@ package-lock.json
 docs/api-reference/
 __*__/
 .build
+
+CLAUDE.md

@@ -97,86 +97,160 @@ The `HookProvider` protocol allows a single object to register callbacks for mul
 
 The following diagram shows when hook events are emitted during a typical agent invocation where tools are invoked:
 
-```mermaid
-flowchart LR
- subgraph Start["Request Start Events"]
-    direction TB
-        BeforeInvocationEvent["BeforeInvocationEvent"]
-        StartMessage["MessageAddedEvent"]
-        BeforeInvocationEvent --> StartMessage
-  end
- subgraph Model["Model Events"]
-    direction TB
-        AfterModelCallEvent["AfterModelCallEvent"]
-        BeforeModelCallEvent["BeforeModelCallEvent"]
-        ModelMessage["MessageAddedEvent"]
-        BeforeModelCallEvent --> AfterModelCallEvent
-        AfterModelCallEvent --> ModelMessage
-  end
-  subgraph Tool["Tool Events"]
-    direction TB
-        AfterToolCallEvent["AfterToolCallEvent"]
-        BeforeToolCallEvent["BeforeToolCallEvent"]
-        ToolMessage["MessageAddedEvent"]
-        BeforeToolCallEvent --> AfterToolCallEvent
-        AfterToolCallEvent --> ToolMessage
-  end
-  subgraph End["Request End Events"]
-    direction TB
-        AfterInvocationEvent["AfterInvocationEvent"]
-  end
-Start --> Model
-Model <--> Tool
-Tool --> End
-```
+=== "Python"
+
+    ```mermaid
+    flowchart LR
+     subgraph Start["Request Start Events"]
+        direction TB
+            BeforeInvocationEvent["BeforeInvocationEvent"]
+            StartMessage["MessageAddedEvent"]
+            BeforeInvocationEvent --> StartMessage
+      end
+     subgraph Model["Model Events"]
+        direction TB
+            BeforeModelCallEvent["BeforeModelCallEvent"]
+            AfterModelCallEvent["AfterModelCallEvent"]
+            ModelMessage["MessageAddedEvent"]
+            BeforeModelCallEvent --> AfterModelCallEvent
+            AfterModelCallEvent --> ModelMessage
+      end
+      subgraph Tool["Tool Events"]
+        direction TB
+            BeforeToolCallEvent["BeforeToolCallEvent"]
+            AfterToolCallEvent["AfterToolCallEvent"]
+            ToolMessage["MessageAddedEvent"]
+            BeforeToolCallEvent --> AfterToolCallEvent
+            AfterToolCallEvent --> ToolMessage
+      end
+      subgraph End["Request End Events"]
+        direction TB
+            AfterInvocationEvent["AfterInvocationEvent"]
+      end
+    Start --> Model
+    Model <--> Tool
+    Tool --> End
+    ```
+
+=== "TypeScript"
+
+    ```mermaid
+    flowchart LR
+     subgraph Start["Request Start Events"]
+        direction TB
+            BeforeInvocationEvent["BeforeInvocationEvent"]
+            StartMessage["MessageAddedEvent"]
+            BeforeInvocationEvent --> StartMessage
+      end
+     subgraph Model["Model Events"]
+        direction TB
+            BeforeModelCallEvent["BeforeModelCallEvent"]
+            ModelStreamUpdateEvent["ModelStreamUpdateEvent"]
+            ContentBlockEvent["ContentBlockEvent"]
+            ModelMessageEvent["ModelMessageEvent"]
+            AfterModelCallEvent["AfterModelCallEvent"]
+            ModelMessage["MessageAddedEvent"]
+            BeforeModelCallEvent --> ModelStreamUpdateEvent
+            ModelStreamUpdateEvent --> ContentBlockEvent
+            ContentBlockEvent --> ModelMessageEvent
+            ModelMessageEvent --> AfterModelCallEvent
+            AfterModelCallEvent --> ModelMessage
+      end
+      subgraph Tool["Tool Events"]
+        direction TB
+            BeforeToolCallEvent["BeforeToolCallEvent"]
+            ToolStreamUpdateEvent["ToolStreamUpdateEvent"]
+            ToolResultEvent["ToolResultEvent"]
+            AfterToolCallEvent["AfterToolCallEvent"]
+            ToolMessage["MessageAddedEvent"]
+            BeforeToolCallEvent --> ToolStreamUpdateEvent
+            ToolStreamUpdateEvent --> ToolResultEvent
+            ToolResultEvent --> AfterToolCallEvent
+            AfterToolCallEvent --> ToolMessage
+      end
+      subgraph End["Request End Events"]
+        direction TB
+            AgentResultEvent["AgentResultEvent"]
+            AfterInvocationEvent["AfterInvocationEvent"]
+            AgentResultEvent --> AfterInvocationEvent
+      end
+    Start --> Model
+    Model <--> Tool
+    Tool --> End
+    ```
 
 ### Multi-Agent Lifecycle
 
 The following diagram shows when multi-agent hook events are emitted during orchestrator execution:
 
-```mermaid
-flowchart LR
-subgraph Init["Initialization"]
-    direction TB
-    MultiAgentInitializedEvent["MultiAgentInitializedEvent"]
-end
-subgraph Invocation["Invocation Lifecycle"]
-    direction TB
-    BeforeMultiAgentInvocationEvent["BeforeMultiAgentInvocationEvent"]
-    AfterMultiAgentInvocationEvent["AfterMultiAgentInvocationEvent"]
-    BeforeMultiAgentInvocationEvent --> NodeExecution
-    NodeExecution --> AfterMultiAgentInvocationEvent
-end
-subgraph NodeExecution["Node Execution (Repeated)"]
-    direction TB
-    BeforeNodeCallEvent["BeforeNodeCallEvent"]
-    AfterNodeCallEvent["AfterNodeCallEvent"]
-    BeforeNodeCallEvent --> AfterNodeCallEvent
-end
-Init --> Invocation
-```
+=== "Python"
+
+    ```mermaid
+    flowchart LR
+    subgraph Init["Initialization"]
+        direction TB
+        MultiAgentInitializedEvent["MultiAgentInitializedEvent"]
+    end
+    subgraph Invocation["Invocation Lifecycle"]
+        direction TB
+        BeforeMultiAgentInvocationEvent["BeforeMultiAgentInvocationEvent"]
+        AfterMultiAgentInvocationEvent["AfterMultiAgentInvocationEvent"]
+        BeforeMultiAgentInvocationEvent --> NodeExecution
+        NodeExecution --> AfterMultiAgentInvocationEvent
+    end
+    subgraph NodeExecution["Node Execution (Repeated)"]
+        direction TB
+        BeforeNodeCallEvent["BeforeNodeCallEvent"]
+        AfterNodeCallEvent["AfterNodeCallEvent"]
+        BeforeNodeCallEvent --> AfterNodeCallEvent
+    end
+    Init --> Invocation
+    ```
+
+{{ ts_not_supported_code("Multi-agent orchestration is not yet available in TypeScript SDK") }}
 
 ### Available Events
 
-The hooks system provides events for different stages of execution. Events marked **(Python only)** are specific to multi-agent orchestrators and are not available in TypeScript.
+=== "Python"
 
-| Event                                                       | Description                                                                                                   |
-|-------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------|
-| `AgentInitializedEvent`                                     | Triggered when an agent has been constructed and finished initialization at the end of the agent constructor. |
-| `BeforeInvocationEvent`                                     | Triggered at the beginning of a new agent invocation request                                                  |
-| `AfterInvocationEvent`                                      | Triggered at the end of an agent request, regardless of success or failure. Uses reverse callback ordering    |
-| `MessageAddedEvent`                                         | Triggered when a message is added to the agent's conversation history                                         |
-| `BeforeModelCallEvent`                                      | Triggered before the model is invoked for inference                                                           |
-| `AfterModelCallEvent`                                       | Triggered after model invocation completes. Uses reverse callback ordering                                    |
-| `BeforeToolCallEvent`                                       | Triggered before a tool is invoked.                                                                           |
-| `AfterToolCallEvent`                                        | Triggered after tool invocation completes. Uses reverse callback ordering                                     |
-| `BeforeToolsEvent` <br /> **(TypeScript only)**             | Triggered before tools are executed in a batch.                                                               |
-| `AfterToolsEvent` <br /> **(TypeScript only)**              | Triggered after tools are executed in a batch. Uses reverse callback ordering                                 |
-| `MultiAgentInitializedEvent` <br /> **(Python only)**       | Triggered when multi-agent orchestrator is initialized                                                        |
-| `BeforeMultiAgentInvocationEvent`  <br /> **(Python only)** | Triggered before orchestrator execution starts                                                                |
-| `AfterMultiAgentInvocationEvent`  <br /> **(Python only)**  | Triggered after orchestrator execution completes. Uses reverse callback ordering                              |
-| `BeforeNodeCallEvent`  <br /> **(Python only)**             | Triggered before individual node execution starts                                                             |
-| `AfterNodeCallEvent`  <br /> **(Python only)**              | Triggered after individual node execution completes. Uses reverse callback ordering                           |
+    | Event                              | Description                                                                                                   |
+    |------------------------------------|---------------------------------------------------------------------------------------------------------------|
+    | `AgentInitializedEvent`            | Triggered when an agent has been constructed and finished initialization at the end of the agent constructor. |
+    | `BeforeInvocationEvent`            | Triggered at the beginning of a new agent invocation request                                                  |
+    | `AfterInvocationEvent`             | Triggered at the end of an agent request, regardless of success or failure. Uses reverse callback ordering    |
+    | `MessageAddedEvent`                | Triggered when a message is added to the agent's conversation history                                         |
+    | `BeforeModelCallEvent`             | Triggered before the model is invoked for inference                                                           |
+    | `AfterModelCallEvent`              | Triggered after model invocation completes. Uses reverse callback ordering                                    |
+    | `BeforeToolCallEvent`              | Triggered before a tool is invoked                                                                            |
+    | `AfterToolCallEvent`               | Triggered after tool invocation completes. Uses reverse callback ordering                                     |
+    | `MultiAgentInitializedEvent`       | Triggered when multi-agent orchestrator is initialized                                                        |
+    | `BeforeMultiAgentInvocationEvent`  | Triggered before orchestrator execution starts                                                                |
+    | `AfterMultiAgentInvocationEvent`   | Triggered after orchestrator execution completes. Uses reverse callback ordering                              |
+    | `BeforeNodeCallEvent`              | Triggered before individual node execution starts                                                             |
+    | `AfterNodeCallEvent`               | Triggered after individual node execution completes. Uses reverse callback ordering                           |
+
+=== "TypeScript"
+
+    All events extend `HookableEvent`, making them both streamable via `agent.stream()` and subscribable via hook callbacks.
+
+    | Event                    | Description                                                                                                   |
+    |--------------------------|---------------------------------------------------------------------------------------------------------------|
+    | `AgentInitializedEvent`  | Triggered when an agent has been constructed and finished initialization at the end of the agent constructor. |
+    | `BeforeInvocationEvent`  | Triggered at the beginning of a new agent invocation request                                                  |
+    | `AfterInvocationEvent`   | Triggered at the end of an agent request, regardless of success or failure. Uses reverse callback ordering    |
+    | `MessageAddedEvent`      | Triggered when a message is added to the agent's conversation history                                         |
+    | `BeforeModelCallEvent`   | Triggered before the model is invoked for inference                                                           |
+    | `AfterModelCallEvent`    | Triggered after model invocation completes. Uses reverse callback ordering                                    |
+    | `ModelStreamUpdateEvent` | Wraps each transient streaming delta from the model during inference. Access via `.event`                     |
+    | `ContentBlockEvent`      | Wraps a fully assembled content block (TextBlock, ToolUseBlock, ReasoningBlock). Access via `.contentBlock`   |
+    | `ModelMessageEvent`      | Wraps the complete model message after all blocks are assembled. Access via `.message`                        |
+    | `BeforeToolCallEvent`    | Triggered before a tool is invoked                                                                            |
+    | `AfterToolCallEvent`     | Triggered after tool invocation completes. Uses reverse callback ordering                                     |
+    | `BeforeToolsEvent`       | Triggered before tools are executed in a batch                                                                |
+    | `AfterToolsEvent`        | Triggered after tools are executed in a batch. Uses reverse callback ordering                                 |
+    | `ToolStreamUpdateEvent`  | Wraps streaming progress events from tool execution. Access via `.event`                                      |
+    | `ToolResultEvent`        | Wraps a completed tool result. Access via `.result`                                                           |
+    | `AgentResultEvent`       | Wraps the final agent result at the end of the invocation. Access via `.result`                               |
 
 ## Hook Behaviors
 
@@ -196,11 +270,15 @@ Most event properties are read-only to prevent unintended modifications. However
 
     - [`AfterToolCallEvent`](../../../api-reference/python/hooks/events.md#strands.hooks.events.AfterToolCallEvent)
         - `result` - Modify the tool result. See [Result Modification](#result-modification).
+        - `retry` - Request a retry of the tool invocation. See [Tool Call Retry](#tool-call-retry).
 
 === "TypeScript"
 
     - `AfterModelCallEvent`
-        - `retryModelCall` - Request a retry of the model invocation (typically after reducing context size).
+        - `retry` - Request a retry of the model invocation.
+
+    - `AfterToolCallEvent`
+        - `retry` - Request a retry of the tool invocation.
 
 ### Callback Ordering
 
@@ -353,7 +431,11 @@ Design hooks to be composable and reusable:
         ...
     ```
 
-{{ ts_not_supported_code("Changing of tools is not yet available in TypeScript SDK") }}
+=== "TypeScript"
+
+    ```typescript
+    --8<-- "user-guide/concepts/agents/hooks.ts:composability"
+    ```
 
 ### Event Property Modifications
 
@@ -464,10 +546,10 @@ Useful for enforcing security policies, maintaining consistency, or overriding a
         def __init__(self, fixed_tool_arguments: dict[str, dict[str, Any]]):
             """
             Initialize fixed parameter values for tools.
-        
+
             Args:
-                fixed_tool_arguments: A dictionary mapping tool names to dictionaries of 
-                    parameter names and their fixed values. These values will override any 
+                fixed_tool_arguments: A dictionary mapping tool names to dictionaries of
+                    parameter names and their fixed values. These values will override any
                     values provided by the agent when the tool is invoked.
             """
             self._tools_to_fix = fixed_tool_arguments
@@ -482,7 +564,11 @@ Useful for enforcing security policies, maintaining consistency, or overriding a
                 tool_input.update(parameters_to_fix)
     ```
 
-{{ ts_not_supported_code("Changing of tools is not yet available in TypeScript SDK") }}
+=== "TypeScript"
+
+    ```typescript
+    --8<-- "user-guide/concepts/agents/hooks.ts:fixed_tool_arguments_class"
+    ```
 
 For example, to always force the `calculator` tool to use precision of 1 digit:
 
@@ -499,7 +585,11 @@ For example, to always force the `calculator` tool to use precision of 1 digit:
     result = agent("What is 2 / 3?")
     ```
 
-{{ ts_not_supported_code("Changing of tools is not yet available in TypeScript SDK") }}
+=== "TypeScript"
+
+    ```typescript
+    --8<-- "user-guide/concepts/agents/hooks.ts:fixed_tool_arguments_usage"
+    ```
 
 ### Limit Tool Counts
 
@@ -623,6 +713,76 @@ For example, to retry up to 3 times on service unavailable errors:
     agent = Agent(hooks=[retry_hook])
 
     result = agent("What is the capital of France?")
+    ```
+
+{{ ts_not_supported_code("This feature is not yet available in TypeScript SDK") }}
+
+### Tool Call Retry
+
+Useful for implementing custom retry logic for tool invocations. The `AfterToolCallEvent.retry` field allows hooks to request that a tool be re-executed—for example, to handle transient errors, timeouts, or flaky external services. When `retry` is set to `True`, the tool executor discards the current result and invokes the tool again with the same `tool_use_id`.
+
+!!! note "Streaming behavior"
+    When a tool call is retried, intermediate streaming events (`ToolStreamEvent`) from discarded attempts will have already been emitted to callers. Only the final attempt's `ToolResultEvent` is emitted and added to conversation history. Callers consuming streamed events should be prepared to handle events from discarded attempts.
+
+=== "Python"
+
+    ```python
+    import logging
+    from strands.hooks import HookProvider, HookRegistry, AfterToolCallEvent
+
+    logger = logging.getLogger(__name__)
+
+    class RetryOnToolError(HookProvider):
+        """Retry tool calls that fail with errors."""
+
+        def __init__(self, max_retries: int = 1):
+            self.max_retries = max_retries
+            self._attempt_counts: dict[str, int] = {}
+
+        def register_hooks(self, registry: HookRegistry) -> None:
+            registry.add_callback(AfterToolCallEvent, self.handle_retry)
+
+        def handle_retry(self, event: AfterToolCallEvent) -> None:
+            tool_use_id = str(event.tool_use.get("toolUseId", ""))
+            tool_name = event.tool_use.get("name", "unknown")
+
+            # Track attempts per tool_use_id
+            attempt = self._attempt_counts.get(tool_use_id, 0) + 1
+            self._attempt_counts[tool_use_id] = attempt
+
+            if event.result.get("status") == "error" and attempt <= self.max_retries:
+                logger.info(f"Retrying tool '{tool_name}' (attempt {attempt}/{self.max_retries})")
+                event.retry = True
+            elif event.result.get("status") != "error":
+                # Clean up tracking on success
+                self._attempt_counts.pop(tool_use_id, None)
+    ```
+
+{{ ts_not_supported_code("This feature is not yet available in TypeScript SDK") }}
+
+For example, to retry failed tool calls once:
+
+=== "Python"
+
+    ```python
+    from strands import Agent, tool
+
+    @tool
+    def flaky_api_call(query: str) -> str:
+        """Call an external API that sometimes fails.
+
+        Args:
+            query: The query to send.
+        """
+        import random
+        if random.random() < 0.5:
+            raise RuntimeError("Service temporarily unavailable")
+        return f"Result for: {query}"
+
+    retry_hook = RetryOnToolError(max_retries=1)
+    agent = Agent(tools=[flaky_api_call], hooks=[retry_hook])
+
+    result = agent("Look up the weather")
     ```
 
 {{ ts_not_supported_code("This feature is not yet available in TypeScript SDK") }}
