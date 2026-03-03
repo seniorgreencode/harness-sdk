@@ -25,6 +25,17 @@ const EXPLICIT_TITLES: Record<string, string> = {
   "user-guide/concepts/model-providers/fireworksai.md": "Fireworks AI",
   "user-guide/concepts/model-providers/xai.md": "xAI",
   "user-guide/concepts/model-providers/nebius-token-factory.md": "Nebius Token Factory",
+  // Labs pages (don't have H1 headings in source)
+  "labs/index.md": "Strands Labs",
+  "labs/robots.md": "Robots",
+  "labs/robots-sim.md": "Robots Sim",
+  "labs/ai-functions.md": "AI Functions",
+  // Contribute pages
+  "contribute/index.md": "Contribute",
+  "contribute/contributing/core-sdk.md": "Contributing to the SDK",
+  "contribute/contributing/documentation.md": "Contributing to Documentation",
+  "contribute/contributing/extensions.md": "Publishing Extensions",
+  "contribute/contributing/feature-proposals.md": "Feature Proposals",
 };
 
 // MkDocs extra variables from mkdocs.yml

@@ -80,9 +80,14 @@ const rawNavLinks: NavLink[] = [
     basePath: '/community/',
   },
   {
+    label: 'Labs',
+    href: '/labs/',
+    basePath: '/labs/',
+  },
+  {
     label: 'Contribute ❤️',
-    href: 'https://github.com/strands-agents/sdk-python/blob/main/CONTRIBUTING.md',
-    external: true,
+    href: '/contribute/',
+    basePath: '/contribute/',
   },
   {
     label: 'Python API',
