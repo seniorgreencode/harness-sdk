@@ -322,6 +322,7 @@ The custom header (`src/components/overrides/Header.astro`) replicates the navig
 **Features:**
 - Navigation tabs displayed below the main header row on desktop
 - Mobile dropdown menu next to the search bar for small screens
+- GitHub repository dropdown (`src/components/GitHubDropdown.astro`) replacing the default social icons
 - Theme-aware logos (`logo-header-light.svg` / `logo-header-dark.svg`)
 - Active state detection using longest-match path logic
 
@@ -331,10 +332,7 @@ Edit `src/config/navbar.ts` to add, remove, or reorder navigation links:
 
 ```typescript
 const rawNavLinks: NavLink[] = [
-  {
-    label: 'Home',
-    href: '/',
-  },
+  { label: 'Home', href: '/' },
   {
     label: 'User Guide',
     href: '/user-guide/quickstart/overview/',
@@ -347,6 +345,8 @@ const rawNavLinks: NavLink[] = [
   },
 ]
 ```
+
+**GitHub dropdown:** `src/config/navbar.ts` also exports `githubSections` — an array of grouped repository links shown in the `GitHubDropdown` component (desktop) and the mobile nav menu. Edit this to add or remove repos/orgs.
 
 **Active state logic:** The header uses `findCurrentNavSection()` from `src/route-middleware.ts` to determine which tab is active. It finds the nav link with the longest matching `basePath` (or `href` if no `basePath`) that the current URL starts with.
 

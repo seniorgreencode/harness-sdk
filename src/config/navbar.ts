@@ -106,3 +106,35 @@ const rawNavLinks: NavLink[] = [
  * Use this for rendering and comparisons.
  */
 export const navLinks: NavLink[] = transformNavLinks(rawNavLinks)
+
+/**
+ * GitHub links shown in the header dropdown (desktop) and mobile nav menu.
+ * Grouped into sections with a title and list of links.
+ */
+export interface GitHubLink {
+  label: string
+  href: string
+  icon?: string
+}
+
+export interface GitHubSection {
+  title: string
+  links: GitHubLink[]
+}
+
+export const githubSections: GitHubSection[] = [
+  {
+    title: 'SDKs',
+    links: [
+      { label: 'sdk-python', href: 'https://github.com/strands-agents/sdk-python', icon: 'PY' },
+      { label: 'sdk-typescript', href: 'https://github.com/strands-agents/sdk-typescript', icon: 'TS' },
+    ],
+  },
+  {
+    title: 'Organizations',
+    links: [
+      { label: 'strands-agents', href: 'https://github.com/strands-agents' },
+      { label: 'strands-labs', href: 'https://github.com/strands-labs' },
+    ],
+  },
+]

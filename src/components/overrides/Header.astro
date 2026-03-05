@@ -13,12 +13,11 @@ import LanguageSelect from 'virtual:starlight/components/LanguageSelect';
 // @ts-expect-error - Virtual modules are resolved at build time by Starlight
 import Search from 'virtual:starlight/components/Search';
 // @ts-expect-error - Virtual modules are resolved at build time by Starlight
-import SocialIcons from 'virtual:starlight/components/SocialIcons';
-// @ts-expect-error - Virtual modules are resolved at build time by Starlight
 import ThemeSelect from 'virtual:starlight/components/ThemeSelect';
 import { Icon } from '@astrojs/starlight/components';
 
-import { navLinks, type NavLink } from '../../config/navbar';
+import { navLinks, githubSections, type NavLink, type GitHubSection } from '../../config/navbar';
+import GitHubDropdown from '../GitHubDropdown.astro';
 import { findCurrentNavSection } from '../../route-middleware';
 import logoHeaderDark from '../../assets/logo-header-dark.svg';
 import logoHeaderLight from '../../assets/logo-header-light.svg';
@@ -60,8 +59,8 @@ const { siteTitleHref } = Astro.locals.starlightRoute;
             {navLinks.map((link: NavLink) => {
               const isActive = activeNav?.label === link.label;
               return (
-                <a 
-                  href={link.href} 
+                <a
+                  href={link.href}
                   class:list={['mobile-nav-link', { active: isActive }]}
                   {...(link.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
                 >
@@ -70,14 +69,23 @@ const { siteTitleHref } = Astro.locals.starlightRoute;
                 </a>
               );
             })}
+            {githubSections.map((section: GitHubSection, i: number) => (
+              <Fragment>
+                <div class={i === 0 ? 'mobile-nav-divider' : undefined}></div>
+                <div class="mobile-nav-section-label">{i === 0 ? 'GitHub' : section.title}</div>
+                {section.links.map((link) => (
+                  <a href={link.href} target="_blank" rel="noopener noreferrer" class="mobile-nav-link">
+                    {link.icon && <span>{link.icon}</span>} {link.label} <span class="external-icon" aria-hidden="true">↗</span>
+                  </a>
+                ))}
+              </Fragment>
+            ))}
           </div>
         </details>
       </nav>
     )}
     <div class="sl-hidden md:sl-flex print:hidden right-group">
-      <div class="sl-flex social-icons">
-        <SocialIcons />
-      </div>
+      <GitHubDropdown />
       <ThemeSelect />
       <LanguageSelect />
     </div>
@@ -244,18 +252,6 @@ const { siteTitleHref } = Astro.locals.starlightRoute;
       align-items: center;
     }
 
-    .social-icons {
-      gap: 1rem;
-      align-items: center;
-    }
-    
-    /* Vertical divider before social icons (separates from search) */
-    .social-icons::before {
-      content: '';
-      height: 2rem;
-      border-inline-start: 1px solid var(--sl-color-gray-5);
-    }
-
     /*
      * ==========================================================================
      * NAVIGATION TABS (Desktop only)
@@ -393,6 +389,7 @@ const { siteTitleHref } = Astro.locals.starlightRoute;
       text-decoration: none;
       border-radius: 0.25rem;
       transition: background-color 0.15s;
+      white-space: nowrap;
     }
 
     .mobile-nav-link:hover {
@@ -406,6 +403,22 @@ const { siteTitleHref } = Astro.locals.starlightRoute;
     .mobile-nav-link.active {
       color: var(--sl-color-white);
       font-weight: 600;
+    }
+
+    /* Shared styles for section labels and dividers (mobile nav) */
+    .mobile-nav-divider {
+      height: 1px;
+      margin: 0.375rem 0.625rem;
+      background-color: var(--sl-color-gray-5);
+    }
+
+    .mobile-nav-section-label {
+      padding: 0.25rem 0.625rem;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--sl-color-gray-3);
     }
 
     /*

@@ -62,13 +62,6 @@ export default defineConfig({
         dark: './src/assets/logo-dark.svg',
         replacesTitle: false,
       },
-      social: [
-        {
-          icon: 'github',
-          label: 'GitHub',
-          href: 'https://github.com/strands-agents/sdk-python',
-        },
-      ],
       editLink: {
         baseUrl: 'https://github.com/strands-agents/docs/edit/main/',
       },
