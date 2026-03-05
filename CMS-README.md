@@ -450,7 +450,7 @@ npx tsx scripts/api-generation-typescript.ts
 ```
 
 **Input:** `.build/sdk-typescript/src` (cloned SDK repository)
-**Output:** `.build/api-docs/typescript/{classes,interfaces,type-aliases,functions}/*.md`
+**Output:** `.build/api-docs/typescript/{classes,interfaces,type-aliases,functions,namespaces}/*.md`
 
 ### TypeDoc Configuration (`typedoc.json`)
 
@@ -474,8 +474,17 @@ The generation script performs these transformations after typedoc runs:
    editUrl: false
    ---
    ```
+   For namespace members, the slug includes the namespace as a prefix separated by a colon:
+   ```yaml
+   ---
+   title: "setupTracer"
+   slug: api/typescript/telemetry:setupTracer
+   category: functions
+   editUrl: false
+   ---
+   ```
 
-2. **Fixes relative links** to match the flat slug structure (e.g., `../interfaces/AgentData.md` → `../AgentData.md`) and updates `.md` extensions to `.mdx`.
+2. **Fixes relative links** to match the flat slug structure (e.g., `../interfaces/AgentData.md` → `../AgentData.md`) and updates `.md` extensions to `.mdx`. For namespace members and namespace index pages, cross-member links are rewritten to absolute slug paths (e.g., `[TracerConfig](../interfaces/TracerConfig.md)` → `[TracerConfig](/api/typescript/telemetry:TracerConfig)`) to ensure correct resolution regardless of the page's own URL.
 
 3. **Converts to MDX** — runs content through a `unified`/`remark-gfm` pipeline with `mdxToMarkdown()` serialization, which escapes characters that are valid in markdown but invalid in MDX (e.g. `{`, `}` outside code blocks). Content inside code fences is left untouched. Files are written as `.mdx` instead of `.md`. A targeted replacement also handles the literal string `<name>Data` that typedoc emits in prose to describe the naming pattern for data interfaces.
 
@@ -488,6 +497,14 @@ Unlike Python API docs which use hierarchical slugs based on module paths, TypeS
 - The `category` frontmatter field is used for sidebar grouping
 
 This keeps URLs clean while still organizing the sidebar by type (Classes, Interfaces, Type Aliases, Functions).
+
+### Namespace Exports
+
+When the SDK exports a namespace (e.g., `export * as telemetry from './telemetry/index.js'`), typedoc generates a nested directory structure under `namespaces/<ns>/`. The generation script handles this specially:
+
+- The namespace index page (`namespaces/<ns>/index.md`) is kept and written as `namespaces/<ns>.mdx` with slug `api/typescript/<ns>` and category `namespaces`.
+- Members of the namespace (classes, interfaces, functions, etc.) are flattened into the same top-level category directories as regular exports, but their slugs are prefixed with the namespace name using a colon separator: `api/typescript/<ns>:<MemberName>`.
+- All cross-member links within a namespace are rewritten to absolute slug paths to avoid broken relative links after flattening.
 
 ### Symlink Setup
 
@@ -510,18 +527,22 @@ The index page (`src/content/docs/api/typescript/index.mdx`) is a permanent file
 
 **Example structure:**
 ```
+Namespaces
+  └── telemetry
 Classes
   ├── Agent
   ├── BedrockModel
   └── Tool
 Interfaces
   ├── AgentConfig
+  ├── TracerConfig       ← namespace member, slug: api/typescript/telemetry:TracerConfig
   └── ToolSpec
 Type Aliases
   ├── ContentBlock
   └── ToolChoice
 Functions
   ├── configureLogging
+  ├── setupTracer        ← namespace member, slug: api/typescript/telemetry:setupTracer
   └── tool
 ```
 

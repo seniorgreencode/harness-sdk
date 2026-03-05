@@ -26,6 +26,7 @@ function getCategoryDisplayName(category: string): string {
     interfaces: 'Interfaces',
     'type-aliases': 'Type Aliases',
     functions: 'Functions',
+    namespaces: 'Namespaces',
   }
   return mapping[category] || category
 }
@@ -175,6 +176,7 @@ export function buildTypeScriptApiSidebar(docs: DocInfo[], currentSlug: string):
     interfaces: [],
     'type-aliases': [],
     functions: [],
+    namespaces: [],
   }
 
   for (const doc of tsApiDocs) {
@@ -188,7 +190,7 @@ export function buildTypeScriptApiSidebar(docs: DocInfo[], currentSlug: string):
   const entries: SidebarEntry[] = []
 
   // Define category order
-  const categoryOrder = ['classes', 'interfaces', 'type-aliases', 'functions']
+  const categoryOrder = ['namespaces', 'classes', 'interfaces', 'type-aliases', 'functions']
 
   for (const category of categoryOrder) {
     const categoryDocs = categories[category]
