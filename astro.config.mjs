@@ -8,7 +8,7 @@ import { loadSidebarFromMkdocs } from "./src/sidebar.ts"
 import AutoImport from './src/plugins/astro-auto-import.ts'
 import astroExpressiveCode from "astro-expressive-code"
 import mdx from '@astrojs/mdx';
-import astroBrokenLinksChecker from 'astro-broken-links-checker';
+import astroBrokenLinksChecker from './scripts/astro-broken-links-checker-index.js';
 
 // Generate sidebar from mkdocs nav (validates against existing content files)
 // Top-level groups will be rendered as tabs by the custom Sidebar component

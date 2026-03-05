@@ -709,3 +709,7 @@ Type declarations in `src/types/turndown-plugin-gfm.d.ts` (no @types package ava
 ### `astro-broken-links-checker`
 
 This package is pinned to an exact version (`1.0.6`) rather than using a semver range. It's a low-popularity package, so we avoid automatic updates to prevent potentially pulling in malicious or breaking changes without an explicit review. Before upgrading, manually inspect the changelog and diff on the package's repository.
+
+**Known bug:** The upstream plugin does not account for Astro's `base` path configuration, causing it to incorrectly flag all internal links as broken when the site is deployed under a sub-path. See [imazen/astro-broken-link-checker#16](https://github.com/imazen/astro-broken-link-checker/issues/16).
+
+**Local fix:** Rather than waiting for an upstream fix, the plugin source has been inlined into `scripts/astro-broken-links-checker-index.js` and `scripts/astro-broken-links-checker-check-links.js`. The fix captures `config.base` in the `astro:config:setup` hook and strips the base prefix from internal links before resolving them against the `dist/` directory. `astro.config.mjs` imports from the local copy instead of the npm package.

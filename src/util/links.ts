@@ -300,7 +300,7 @@ export function resolveHref(
   const knownStaticFiles = ['llms.txt', 'llms-full.txt']
   for (const file of knownStaticFiles) {
     if (href === file || href === `/${file}` || href.endsWith(`/${file}`)) {
-      return { resolvedHref: pathWithBase(`/${file}`), found: true }
+      return { resolvedHref: `/${file}`, found: true }
     }
   }
 
@@ -313,7 +313,7 @@ export function resolveHref(
     const slugPart = pathOnly.replace(/^\//, '').replace(/\/$/, '')
     const found = docSlugs.has(slugPart)
     // Apply base path for @api links since they resolve to absolute paths
-    return { resolvedHref: pathWithBase(resolved), found }
+    return { resolvedHref: resolved, found }
   }
 
   if (!isRelativeLink(href)) {
