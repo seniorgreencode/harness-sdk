@@ -19,13 +19,13 @@ export function mdPathToSlug(mdPath: string): string {
   let slug = mdPath.replace(/\.md$/, '')
 
   // README.md -> index (or parent directory)
-  if (slug === 'README') return 'index'
-  if (slug.endsWith('/README')) return slug.replace(/\/README$/, '')
+  if (slug === 'README') return 'docs/index'
+  if (slug.endsWith('/README')) return 'docs/' + slug.replace(/\/README$/, '')
 
   // index.md -> parent directory
-  if (slug.endsWith('/index')) return slug.replace(/\/index$/, '')
+  if (slug.endsWith('/index')) return 'docs/' + slug.replace(/\/index$/, '')
 
-  return slug
+  return 'docs/' + slug
 }
 
 /**

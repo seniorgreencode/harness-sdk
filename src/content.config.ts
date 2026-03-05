@@ -27,20 +27,20 @@ export const collections = {
   }),
   docs: defineCollection({
     loader: glob({
-      base: "src/content/docs",
+      base: "src/content",
       // We explicitly declare the folders we want to include, as otherwise it includes index.md files
       // in examples which are not intended to be rendered on the site.
       // Long-term we'll be moving examples into the sdk-python repository instead, solving this problem.
       pattern: [
-        "README.mdx",
-        "llms.mdx",
-        "user-guide/**/*.mdx",
-        "community/**/*.mdx",
-        "contribute/**/*.mdx",
-        "examples/**/[!index]*.mdx",
-        "labs/**/*.mdx",
-        "api/python/**/*.mdx",
-        "api/typescript/**/*.(md|mdx)",
+        "docs/README.mdx",
+        "docs/llms.mdx",
+        "docs/user-guide/**/*.mdx",
+        "docs/community/**/*.mdx",
+        "docs/contribute/**/*.mdx",
+        "docs/examples/**/[!index]*.mdx",
+        "docs/labs/**/*.mdx",
+        "docs/api/python/**/*.mdx",
+        "docs/api/typescript/**/*.(md|mdx)",
       ],
       generateId: generateDocsId,
     }),

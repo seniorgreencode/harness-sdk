@@ -66,38 +66,38 @@ const rawNavLinks: NavLink[] = [
   },
   {
     label: 'User Guide',
-    href: '/user-guide/quickstart/overview/',
-    basePath: '/user-guide/',
+    href: '/docs/user-guide/quickstart/overview/',
+    basePath: '/docs/user-guide/',
   },
   {
     label: 'Examples',
-    href: '/examples/',
-    basePath: '/examples/',
+    href: '/docs/examples/',
+    basePath: '/docs/examples/',
   },
   {
     label: 'Community',
-    href: '/community/community-packages/',
-    basePath: '/community/',
+    href: '/docs/community/community-packages/',
+    basePath: '/docs/community/',
   },
   {
     label: 'Labs',
-    href: '/labs/',
-    basePath: '/labs/',
+    href: '/docs/labs/',
+    basePath: '/docs/labs/',
   },
   {
     label: 'Contribute ❤️',
-    href: '/contribute/',
-    basePath: '/contribute/',
+    href: '/docs/contribute/',
+    basePath: '/docs/contribute/',
   },
   {
     label: 'Python API',
-    href: '/api/python/',
-    basePath: '/api/python/',
+    href: '/docs/api/python/',
+    basePath: '/docs/api/python/',
   },
   {
     label: 'TypeScript API',
-    href: '/api/typescript/',
-    basePath: '/api/typescript/',
+    href: '/docs/api/typescript/',
+    basePath: '/docs/api/typescript/',
   },
 ]
 

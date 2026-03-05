@@ -50,7 +50,7 @@ export interface DocInfo {
  */
 export function buildPythonApiSidebar(docs: DocInfo[], currentSlug: string): SidebarEntry[] {
   const pythonApiDocs = docs.filter(
-    (doc) => doc.id.startsWith('api/python/') && !doc.id.endsWith('api/python/index')
+    (doc) => doc.id.startsWith('docs/api/python/') && !doc.id.endsWith('docs/api/python/index')
   )
 
   // Build a nested structure from module names
@@ -167,7 +167,7 @@ export function buildPythonApiSidebar(docs: DocInfo[], currentSlug: string): Sid
  */
 export function buildTypeScriptApiSidebar(docs: DocInfo[], currentSlug: string): SidebarEntry[] {
   const tsApiDocs = docs.filter(
-    (doc) => doc.id.startsWith('api/typescript/') && !doc.id.endsWith('api/typescript/index')
+    (doc) => doc.id.startsWith('docs/api/typescript/') && !doc.id.endsWith('docs/api/typescript/index')
   )
 
   // Group docs by category from frontmatter

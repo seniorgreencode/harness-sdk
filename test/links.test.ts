@@ -38,37 +38,37 @@ describe('Link Utilities', () => {
 
   describe('resolveApiShorthand', () => {
     it('should resolve Python API links', () => {
-      expect(resolveApiShorthand('@api/python/strands.agent.agent')).toBe('/api/python/strands.agent.agent/')
+      expect(resolveApiShorthand('@api/python/strands.agent.agent')).toBe('/docs/api/python/strands.agent.agent/')
       expect(resolveApiShorthand('@api/python/strands.agent.agent_result')).toBe(
-        '/api/python/strands.agent.agent_result/'
+        '/docs/api/python/strands.agent.agent_result/'
       )
-      expect(resolveApiShorthand('@api/python/strands.models.bedrock')).toBe('/api/python/strands.models.bedrock/')
+      expect(resolveApiShorthand('@api/python/strands.models.bedrock')).toBe('/docs/api/python/strands.models.bedrock/')
     })
 
     it('should resolve TypeScript API links', () => {
-      expect(resolveApiShorthand('@api/typescript/Agent')).toBe('/api/typescript/Agent/')
-      expect(resolveApiShorthand('@api/typescript/BedrockModel')).toBe('/api/typescript/BedrockModel/')
+      expect(resolveApiShorthand('@api/typescript/Agent')).toBe('/docs/api/typescript/Agent/')
+      expect(resolveApiShorthand('@api/typescript/BedrockModel')).toBe('/docs/api/typescript/BedrockModel/')
     })
 
     it('should preserve anchors', () => {
-      expect(resolveApiShorthand('@api/python/strands.agent.agent#Agent')).toBe('/api/python/strands.agent.agent/#Agent')
+      expect(resolveApiShorthand('@api/python/strands.agent.agent#Agent')).toBe('/docs/api/python/strands.agent.agent/#Agent')
       expect(resolveApiShorthand('@api/python/strands.agent.agent_result#AgentResult')).toBe(
-        '/api/python/strands.agent.agent_result/#AgentResult'
+        '/docs/api/python/strands.agent.agent_result/#AgentResult'
       )
       expect(resolveApiShorthand('@api/typescript/BedrockModel#constructor')).toBe(
-        '/api/typescript/BedrockModel/#constructor'
+        '/docs/api/typescript/BedrockModel/#constructor'
       )
     })
 
     it('should handle nested module paths', () => {
       expect(resolveApiShorthand('@api/python/strands.agent.conversation_manager.sliding_window_conversation_manager')).toBe(
-        '/api/python/strands.agent.conversation_manager.sliding_window_conversation_manager/'
+        '/docs/api/python/strands.agent.conversation_manager.sliding_window_conversation_manager/'
       )
       expect(
         resolveApiShorthand(
           '@api/python/strands.experimental.bidi.models.gemini_live#BidiGeminiLiveModel'
         )
-      ).toBe('/api/python/strands.experimental.bidi.models.gemini_live/#BidiGeminiLiveModel')
+      ).toBe('/docs/api/python/strands.experimental.bidi.models.gemini_live/#BidiGeminiLiveModel')
     })
   })
 
@@ -274,30 +274,30 @@ describe('Link Utilities', () => {
     })
 
     it('should resolve @api/python shorthand links', () => {
-      const slugs = new Set(['api/python/strands.agent.agent', 'api/python/strands.agent.agent_result'])
+      const slugs = new Set(['docs/api/python/strands.agent.agent', 'docs/api/python/strands.agent.agent_result'])
       const result = resolveHref('@api/python/strands.agent.agent', '/user-guide/quickstart/', slugs)
-      expect(result.resolvedHref).toBe('/api/python/strands.agent.agent/')
+      expect(result.resolvedHref).toBe('/docs/api/python/strands.agent.agent/')
       expect(result.found).toBe(true)
     })
 
     it('should resolve @api/typescript shorthand links', () => {
-      const slugs = new Set(['api/typescript/Agent', 'api/typescript/BedrockModel'])
+      const slugs = new Set(['docs/api/typescript/Agent', 'docs/api/typescript/BedrockModel'])
       const result = resolveHref('@api/typescript/BedrockModel', '/user-guide/quickstart/', slugs)
-      expect(result.resolvedHref).toBe('/api/typescript/BedrockModel/')
+      expect(result.resolvedHref).toBe('/docs/api/typescript/BedrockModel/')
       expect(result.found).toBe(true)
     })
 
     it('should resolve @api shorthand links with anchors', () => {
-      const slugs = new Set(['api/python/strands.agent.agent_result'])
+      const slugs = new Set(['docs/api/python/strands.agent.agent_result'])
       const result = resolveHref('@api/python/strands.agent.agent_result#AgentResult', '/user-guide/quickstart/', slugs)
-      expect(result.resolvedHref).toBe('/api/python/strands.agent.agent_result/#AgentResult')
+      expect(result.resolvedHref).toBe('/docs/api/python/strands.agent.agent_result/#AgentResult')
       expect(result.found).toBe(true)
     })
 
     it('should mark @api shorthand links as not found when slug does not exist', () => {
-      const slugs = new Set(['api/python/strands.agent.agent'])
+      const slugs = new Set(['docs/api/python/strands.agent.agent'])
       const result = resolveHref('@api/python/strands.nonexistent.module', '/user-guide/quickstart/', slugs)
-      expect(result.resolvedHref).toBe('/api/python/strands.nonexistent.module/')
+      expect(result.resolvedHref).toBe('/docs/api/python/strands.nonexistent.module/')
       expect(result.found).toBe(false)
     })
   })

@@ -6,12 +6,12 @@ import { getBase, getSiteOrigin } from '@util/links'
 export const GET: APIRoute = async () => {
   const allDocs = await getCollection('docs')
   // Exclude API documentation and the llms page itself from full content
-  const docs = allDocs.filter((doc) => !doc.id.startsWith('api/') && doc.id !== 'llms')
+  const docs = allDocs.filter((doc) => !doc.id.startsWith('docs/api/') && doc.id !== 'docs/llms')
   const base = getSiteOrigin() + getBase()
   const lines: string[] = []
 
   // Render the llms.mdx page as the header
-  const llmsEntry = await getEntry('docs', 'llms')
+  const llmsEntry = await getEntry('docs', 'docs/llms')
   if (llmsEntry) {
     const { markdown: header } = await renderEntryToMarkdown(llmsEntry)
     lines.push('# Strands Agents')

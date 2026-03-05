@@ -88,16 +88,15 @@ function getAllMdFiles(dir: string, baseDir: string = dir): FileInfo[] {
  */
 function generateSlug(category: string, name: string, namespace?: string): string {
   if (category === 'index') {
-    return 'api/typescript'
+    return 'docs/api/typescript'
   }
   if (category === 'namespaces') {
-    // Namespace index page: slug is just the namespace name
-    return `api/typescript/${name}`
+    return `docs/api/typescript/${name}`
   }
   if (namespace) {
-    return `api/typescript/${namespace}:${name}`
+    return `docs/api/typescript/${namespace}:${name}`
   }
-  return `api/typescript/${name}`
+  return `docs/api/typescript/${name}`
 }
 
 /**

@@ -16,9 +16,9 @@ type SidebarEntry = SidebarLink | SidebarGroup
 // Test nav links without base path (simulating no BASE_URL set)
 const testNavLinks: NavLink[] = [
   { label: 'Home', href: '/' },
-  { label: 'User Guide', href: '/user-guide/quickstart/overview/', basePath: '/user-guide/' },
-  { label: 'Examples', href: '/examples/', basePath: '/examples/' },
-  { label: 'Community', href: '/community/community-packages/', basePath: '/community/' },
+  { label: 'User Guide', href: '/docs/user-guide/quickstart/overview/', basePath: '/docs/user-guide/' },
+  { label: 'Examples', href: '/docs/examples/', basePath: '/docs/examples/' },
+  { label: 'Community', href: '/docs/community/community-packages/', basePath: '/docs/community/' },
   { label: 'Contribute', href: 'https://github.com/example', external: true },
 ]
 
@@ -71,25 +71,25 @@ function getAllLinks(entries: SidebarEntry[]): SidebarLink[] {
 
 describe('findCurrentNavSection', () => {
   it('should find Examples nav for /examples/ path', () => {
-    const result = findCurrentNavSection('/examples/', testNavLinks)
+    const result = findCurrentNavSection('/docs/examples/', testNavLinks)
     expect(result).toBeDefined()
     expect(result?.label).toBe('Examples')
   })
 
   it('should find Examples nav for nested examples path', () => {
-    const result = findCurrentNavSection('/examples/python/weather_forecaster/', testNavLinks)
+    const result = findCurrentNavSection('/docs/examples/python/weather_forecaster/', testNavLinks)
     expect(result).toBeDefined()
     expect(result?.label).toBe('Examples')
   })
 
   it('should find User Guide nav for user-guide paths', () => {
-    const result = findCurrentNavSection('/user-guide/quickstart/overview/', testNavLinks)
+    const result = findCurrentNavSection('/docs/user-guide/quickstart/overview/', testNavLinks)
     expect(result).toBeDefined()
     expect(result?.label).toBe('User Guide')
   })
 
   it('should find Community nav for community paths', () => {
-    const result = findCurrentNavSection('/community/community-packages/', testNavLinks)
+    const result = findCurrentNavSection('/docs/community/community-packages/', testNavLinks)
     expect(result).toBeDefined()
     expect(result?.label).toBe('Community')
   })
@@ -121,7 +121,7 @@ describe('findCurrentNavSection', () => {
 
 describe('Sidebar filtering with live mkdocs.yml data', () => {
   const mkdocsPath = path.resolve('./mkdocs.yml')
-  const docsDir = path.resolve('./src/content/docs')
+  const docsDir = path.resolve('./src/content')
   const buildTimeSidebar = loadSidebarFromMkdocs(mkdocsPath, docsDir)
   const runtimeSidebar = convertToRuntimeFormat(buildTimeSidebar)
 
@@ -131,7 +131,7 @@ describe('Sidebar filtering with live mkdocs.yml data', () => {
   })
 
   it('should filter sidebar to only Examples items for /examples/ basePath', () => {
-    const result = filterSidebarByBasePath(runtimeSidebar as any, '/examples/')
+    const result = filterSidebarByBasePath(runtimeSidebar as any, '/docs/examples/')
 
     const allLinks = getAllLinks(result)
     console.log(`\nExamples section has ${allLinks.length} links:`)
@@ -140,39 +140,39 @@ describe('Sidebar filtering with live mkdocs.yml data', () => {
 
     expect(allLinks.length).toBeGreaterThan(0)
     allLinks.forEach((link) => {
-      expect(link.href).toMatch(/^\/examples\//)
+      expect(link.href).toMatch(/^\/docs\/examples\//)
     })
   })
 
   it('should filter sidebar to only User Guide items for /user-guide/ basePath', () => {
-    const result = filterSidebarByBasePath(runtimeSidebar as any, '/user-guide/')
+    const result = filterSidebarByBasePath(runtimeSidebar as any, '/docs/user-guide/')
 
     const allLinks = getAllLinks(result)
     console.log(`\nUser Guide section has ${allLinks.length} links`)
 
     expect(allLinks.length).toBeGreaterThan(0)
     allLinks.forEach((link) => {
-      expect(link.href).toMatch(/^\/user-guide\//)
+      expect(link.href).toMatch(/^\/docs\/user-guide\//)
     })
   })
 
   it('should filter sidebar to only Community items for /community/ basePath', () => {
-    const result = filterSidebarByBasePath(runtimeSidebar as any, '/community/')
+    const result = filterSidebarByBasePath(runtimeSidebar as any, '/docs/community/')
 
     const allLinks = getAllLinks(result)
     console.log(`\nCommunity section has ${allLinks.length} links`)
 
     expect(allLinks.length).toBeGreaterThan(0)
     allLinks.forEach((link) => {
-      expect(link.href).toMatch(/^\/community\//)
+      expect(link.href).toMatch(/^\/docs\/community\//)
     })
   })
 
   it('should not include User Guide or Community items when filtering for Examples', () => {
-    const result = filterSidebarByBasePath(runtimeSidebar as any, '/examples/')
+    const result = filterSidebarByBasePath(runtimeSidebar as any, '/docs/examples/')
 
     const allLinks = getAllLinks(result)
-    const nonExamplesLinks = allLinks.filter((link) => !link.href.startsWith('/examples/'))
+    const nonExamplesLinks = allLinks.filter((link) => !link.href.startsWith('/docs/examples/'))
 
     if (nonExamplesLinks.length > 0) {
       console.log('\nUnexpected non-examples links found:')
@@ -185,33 +185,33 @@ describe('Sidebar filtering with live mkdocs.yml data', () => {
 
 describe('Integration: Full filtering flow', () => {
   const mkdocsPath = path.resolve('./mkdocs.yml')
-  const docsDir = path.resolve('./src/content/docs')
+  const docsDir = path.resolve('./src/content')
   const buildTimeSidebar = loadSidebarFromMkdocs(mkdocsPath, docsDir)
   const runtimeSidebar = convertToRuntimeFormat(buildTimeSidebar)
 
   it('should correctly filter sidebar for /examples/ page', () => {
-    const currentPath = '/examples/'
+    const currentPath = '/docs/examples/'
     const currentNav = findCurrentNavSection(currentPath, testNavLinks)
 
     expect(currentNav).toBeDefined()
     expect(currentNav?.label).toBe('Examples')
-    expect(currentNav?.basePath).toBe('/examples/')
+    expect(currentNav?.basePath).toBe('/docs/examples/')
 
     const basePath = currentNav?.basePath || currentNav?.href || ''
     const filtered = filterSidebarByBasePath(runtimeSidebar as any, basePath)
     const result = expandFirstLevelGroups(filtered)
 
     const allLinks = getAllLinks(result)
-    console.log(`\n/examples/ page should show ${allLinks.length} sidebar links`)
+    console.log(`\n/docs/examples/ page should show ${allLinks.length} sidebar links`)
 
     expect(allLinks.length).toBeGreaterThan(0)
     allLinks.forEach((link) => {
-      expect(link.href.startsWith('/examples/')).toBe(true)
+      expect(link.href.startsWith('/docs/examples/')).toBe(true)
     })
   })
 
   it('should correctly filter sidebar for nested /examples/python/weather_forecaster/ page', () => {
-    const currentPath = '/examples/python/weather_forecaster/'
+    const currentPath = '/docs/examples/python/weather_forecaster/'
     const currentNav = findCurrentNavSection(currentPath, testNavLinks)
 
     expect(currentNav).toBeDefined()
@@ -224,12 +224,12 @@ describe('Integration: Full filtering flow', () => {
     const allLinks = getAllLinks(result)
     expect(allLinks.length).toBeGreaterThan(0)
     allLinks.forEach((link) => {
-      expect(link.href.startsWith('/examples/')).toBe(true)
+      expect(link.href.startsWith('/docs/examples/')).toBe(true)
     })
   })
 
   it('should correctly filter sidebar for /community/community-packages/ page', () => {
-    const currentPath = '/community/community-packages/'
+    const currentPath = '/docs/community/community-packages/'
     const currentNav = findCurrentNavSection(currentPath, testNavLinks)
 
     expect(currentNav).toBeDefined()
@@ -242,7 +242,7 @@ describe('Integration: Full filtering flow', () => {
     const allLinks = getAllLinks(result)
     expect(allLinks.length).toBeGreaterThan(0)
     allLinks.forEach((link) => {
-      expect(link.href.startsWith('/community/')).toBe(true)
+      expect(link.href.startsWith('/docs/community/')).toBe(true)
     })
   })
 })

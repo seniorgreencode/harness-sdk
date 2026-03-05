@@ -14,7 +14,7 @@ import astroBrokenLinksChecker from './scripts/astro-broken-links-checker-index.
 // Top-level groups will be rendered as tabs by the custom Sidebar component
 const sidebar = loadSidebarFromMkdocs(
   path.resolve('./mkdocs.yml'),
-  path.resolve('./src/content/docs')
+  path.resolve('./src/content')
 )
 
 // https://astro.build/config

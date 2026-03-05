@@ -17,13 +17,13 @@ describe('Sidebar Generation', () => {
   })
 
   it('should convert README.md to index slug', () => {
-    expect(mdPathToSlug('README.md')).toBe('index')
-    expect(mdPathToSlug('examples/README.md')).toBe('examples')
+    expect(mdPathToSlug('README.md')).toBe('docs/index')
+    expect(mdPathToSlug('examples/README.md')).toBe('docs/examples')
   })
 
   it('should strip .md extension and handle index files', () => {
-    expect(mdPathToSlug('user-guide/quickstart/overview.md')).toBe('user-guide/quickstart/overview')
-    expect(mdPathToSlug('user-guide/concepts/tools/index.md')).toBe('user-guide/concepts/tools')
+    expect(mdPathToSlug('user-guide/quickstart/overview.md')).toBe('docs/user-guide/quickstart/overview')
+    expect(mdPathToSlug('user-guide/concepts/tools/index.md')).toBe('docs/user-guide/concepts/tools')
   })
 
   it('should handle external links', () => {
@@ -42,7 +42,7 @@ describe('Sidebar Generation', () => {
     // Internal links omit labels - Starlight uses page title from frontmatter
     expect(item).toEqual({
       label: 'Quickstart',
-      items: [{ slug: 'overview' }, { slug: 'python' }],
+      items: [{ slug: 'docs/overview' }, { slug: 'docs/python' }],
     })
   })
 

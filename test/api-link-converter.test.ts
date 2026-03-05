@@ -470,7 +470,7 @@ describe('API Link Converter', () => {
 
       const missingModules: string[] = []
       for (const modulePath of pythonModules) {
-        const slug = `api/python/${modulePath}`
+        const slug = `docs/api/python/${modulePath}`
         if (!docSlugs.has(slug)) {
           missingModules.push(slug)
         }
@@ -501,7 +501,7 @@ describe('API Link Converter', () => {
 
       const missingTypes: string[] = []
       for (const typeName of tsTypes) {
-        const slug = `api/typescript/${typeName}`
+        const slug = `docs/api/typescript/${typeName}`
         if (!docSlugs.has(slug)) {
           missingTypes.push(slug)
         }
@@ -527,7 +527,7 @@ describe('API Link Converter', () => {
           if (pathPart && hash) {
             linksWithHashes.push({
               newLink,
-              slug: `api/python/${pathPart}`,
+              slug: `docs/api/python/${pathPart}`,
               hash,
             })
           }
@@ -563,7 +563,7 @@ describe('API Link Converter', () => {
           // We need to construct the expected anchor ID
 
           // Extract the module path from the slug
-          const modulePath = slug.replace('api/python/', '')
+          const modulePath = slug.replace('docs/api/python/', '')
 
           // The full anchor ID is modulePath + "." + hash (for class/method references)
           // But for simple class references, the anchor might just be modulePath.ClassName

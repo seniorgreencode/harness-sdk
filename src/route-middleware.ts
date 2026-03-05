@@ -103,7 +103,7 @@ export const onRequest = defineRouteMiddleware(async (context) => {
   const currentSlug = starlightRoute.id
 
   // Check if we're on a Python API page
-  if (currentSlug.startsWith('api/python')) {
+  if (currentSlug.startsWith('docs/api/python')) {
     const docs = await getCollection('docs')
     const docInfos: DocInfo[] = docs.map((doc: { id: string; data: { title: unknown } }) => ({
       id: doc.id,
@@ -116,8 +116,8 @@ export const onRequest = defineRouteMiddleware(async (context) => {
     pythonSidebar.unshift({
       type: 'link',
       label: 'Overview',
-      href: pathWithBase('/api/python/'),
-      isCurrent: currentSlug === 'api/python',
+      href: pathWithBase('/docs/api/python/'),
+      isCurrent: currentSlug === 'docs/api/python',
       badge: undefined,
       attrs: {},
     })
@@ -129,7 +129,7 @@ export const onRequest = defineRouteMiddleware(async (context) => {
   }
 
   // Check if we're on a TypeScript API page
-  if (currentSlug.startsWith('api/typescript')) {
+  if (currentSlug.startsWith('docs/api/typescript')) {
     const docs = await getCollection('docs')
     const docInfos: DocInfo[] = docs.map((doc: { id: string; data: { title: unknown; category?: unknown } }) => ({
       id: doc.id,
@@ -143,8 +143,8 @@ export const onRequest = defineRouteMiddleware(async (context) => {
     tsSidebar.unshift({
       type: 'link',
       label: 'Overview',
-      href: pathWithBase('/api/typescript/'),
-      isCurrent: currentSlug === 'api/typescript',
+      href: pathWithBase('/docs/api/typescript/'),
+      isCurrent: currentSlug === 'docs/api/typescript',
       badge: undefined,
       attrs: {},
     })

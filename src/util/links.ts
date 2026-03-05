@@ -34,7 +34,7 @@ export function resolveApiShorthand(link: string): string {
   const anchor = hashIndex !== -1 ? withoutPrefix.slice(hashIndex) : ''
 
   // The path is already in the correct format (python/strands.module or typescript/ClassName)
-  return `/api/${pathPart}/${anchor}`
+  return `/docs/api/${pathPart}/${anchor}`
 }
 
 /**

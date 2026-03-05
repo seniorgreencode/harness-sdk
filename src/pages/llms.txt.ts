@@ -66,9 +66,9 @@ function buildLlmsTxt(docs: CollectionEntry<'docs'>[], sidebar: StarlightSidebar
   }
 
   // API sections - group by python/typescript
-  const apiDocs = docs.filter((doc) => doc.id.startsWith('api/'))
-  const pythonApi = apiDocs.filter((doc) => doc.id.startsWith('api/python/'))
-  const typescriptApi = apiDocs.filter((doc) => doc.id.startsWith('api/typescript/'))
+  const apiDocs = docs.filter((doc) => doc.id.startsWith('docs/api/'))
+  const pythonApi = apiDocs.filter((doc) => doc.id.startsWith('docs/api/python/'))
+  const typescriptApi = apiDocs.filter((doc) => doc.id.startsWith('docs/api/typescript/'))
 
   if (pythonApi.length > 0) {
     lines.push(`## Api Python`)
@@ -99,11 +99,11 @@ export const GET: APIRoute = async () => {
   const docs = await getCollection('docs')
   const sidebar = loadSidebarFromMkdocs(
     path.resolve('./mkdocs.yml'),
-    path.resolve('./src/content/docs')
+    path.resolve('./src/content')
   )
 
   // Render the llms.mdx page as the header
-  const llmsEntry = await getEntry('docs', 'llms')
+  const llmsEntry = await getEntry('docs', 'docs/llms')
   if (!llmsEntry) {
     throw new Error(`llms.mdx not found`)
   }

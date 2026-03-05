@@ -6,7 +6,7 @@
 - [X] Add API documentation generation/integration for Python and TypeScript SDKs
 - [ ] Fix type-checking
 - [ ] Look into markdown 
-- [X] Add header links to Python/TypeScript method sections (api/python/strands.agent.agent/)
+- [X] Add header links to Python/TypeScript method sections (docs/api/python/strands.agent.agent/)
 - [ ] Migrate all files and remove conversion scripts
 - [ ] Remove `<name>Data` special-case in `scripts/api-generation-typescript.ts` once typedoc fixes the prose or we find a better general solution
 

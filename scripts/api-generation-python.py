@@ -122,7 +122,7 @@ def generate_docs():
         simple_name = parts[-1]
         filename = f"{module_name}.mdx"
         filepath = output_dir / filename
-        slug = f"api/python/{module_name}"
+        slug = f"docs/api/python/{module_name}"
 
         # Render single module
         content = renderer.render_to_string([module])

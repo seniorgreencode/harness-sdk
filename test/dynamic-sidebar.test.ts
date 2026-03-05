@@ -24,7 +24,7 @@ describe('getDisplayName', () => {
 describe('buildPythonApiSidebar', () => {
   it('should create flat links for leaf modules', () => {
     const docs: DocInfo[] = [
-      { id: 'api/python/strands.interrupt.mdx', title: 'strands.interrupt' },
+      { id: 'docs/api/python/strands.interrupt.mdx', title: 'strands.interrupt' },
     ]
 
     const sidebar = buildPythonApiSidebar(docs, '')
@@ -33,14 +33,14 @@ describe('buildPythonApiSidebar', () => {
     expect(sidebar[0]).toMatchObject({
       type: 'link',
       label: 'Interrupt',
-      href: '/api/python/strands.interrupt.mdx/',
+      href: '/docs/api/python/strands.interrupt.mdx/',
     })
   })
 
   it('should group modules by path segments', () => {
     const docs: DocInfo[] = [
-      { id: 'api/python/strands.agent.agent.mdx', title: 'strands.agent.agent' },
-      { id: 'api/python/strands.agent.base.mdx', title: 'strands.agent.base' },
+      { id: 'docs/api/python/strands.agent.agent.mdx', title: 'strands.agent.agent' },
+      { id: 'docs/api/python/strands.agent.base.mdx', title: 'strands.agent.base' },
     ]
 
     const sidebar = buildPythonApiSidebar(docs, '')
@@ -57,8 +57,8 @@ describe('buildPythonApiSidebar', () => {
 
   it('should create nested groups for deep module paths', () => {
     const docs: DocInfo[] = [
-      { id: 'api/python/strands.experimental.bidi.types.events.mdx', title: 'strands.experimental.bidi.types.events' },
-      { id: 'api/python/strands.experimental.bidi.types.io.mdx', title: 'strands.experimental.bidi.types.io' },
+      { id: 'docs/api/python/strands.experimental.bidi.types.events.mdx', title: 'strands.experimental.bidi.types.events' },
+      { id: 'docs/api/python/strands.experimental.bidi.types.io.mdx', title: 'strands.experimental.bidi.types.io' },
     ]
 
     const sidebar = buildPythonApiSidebar(docs, '')
@@ -84,10 +84,10 @@ describe('buildPythonApiSidebar', () => {
 
   it('should mark current page as isCurrent', () => {
     const docs: DocInfo[] = [
-      { id: 'api/python/strands.interrupt.mdx', title: 'strands.interrupt' },
+      { id: 'docs/api/python/strands.interrupt.mdx', title: 'strands.interrupt' },
     ]
 
-    const sidebar = buildPythonApiSidebar(docs, 'api/python/strands.interrupt.mdx')
+    const sidebar = buildPythonApiSidebar(docs, 'docs/api/python/strands.interrupt.mdx')
 
     const link = sidebar[0] as Extract<SidebarEntry, { type: 'link' }>
     expect(link.isCurrent).toBe(true)
@@ -95,9 +95,9 @@ describe('buildPythonApiSidebar', () => {
 
   it('should filter out non-python-api docs', () => {
     const docs: DocInfo[] = [
-      { id: 'api/python/strands.agent.agent.mdx', title: 'strands.agent.agent' },
-      { id: 'user-guide/quickstart.mdx', title: 'Quickstart' },
-      { id: 'api/python/index', title: 'Python API Reference' },
+      { id: 'docs/api/python/strands.agent.agent.mdx', title: 'strands.agent.agent' },
+      { id: 'docs/user-guide/quickstart.mdx', title: 'Quickstart' },
+      { id: 'docs/api/python/index', title: 'Python API Reference' },
     ]
 
     const sidebar = buildPythonApiSidebar(docs, '')
@@ -109,8 +109,8 @@ describe('buildPythonApiSidebar', () => {
 
   it('should sort groups before links', () => {
     const docs: DocInfo[] = [
-      { id: 'api/python/strands.interrupt.mdx', title: 'strands.interrupt' },
-      { id: 'api/python/strands.agent.agent.mdx', title: 'strands.agent.agent' },
+      { id: 'docs/api/python/strands.interrupt.mdx', title: 'strands.interrupt' },
+      { id: 'docs/api/python/strands.agent.agent.mdx', title: 'strands.agent.agent' },
     ]
 
     const sidebar = buildPythonApiSidebar(docs, '')

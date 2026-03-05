@@ -26,9 +26,9 @@ This data is used by `scripts/update-docs.ts` to generate sidebar frontmatter du
 
 **Why:** Our sidebar is organized into top-level groups (User Guide, Community, Examples, etc.). Without this middleware, every page would show the entire sidebar. This middleware scopes the sidebar to the current section, providing a cleaner navigation experience.
 
-**Python API sidebar:** When viewing pages under `api/python/`, the middleware uses `buildPythonApiSidebar()` from `src/dynamic-sidebar.ts` to generate a nested sidebar structure based on module names (e.g., `strands.agent.agent` becomes `Agent > Agent`).
+**Python API sidebar:** When viewing pages under `docs/api/python/`, the middleware uses `buildPythonApiSidebar()` from `src/dynamic-sidebar.ts` to generate a nested sidebar structure based on module names (e.g., `strands.agent.agent` becomes `Agent > Agent`).
 
-**TypeScript API sidebar:** When viewing pages under `api/typescript/`, the middleware uses `buildTypeScriptApiSidebar()` to generate a category-grouped sidebar (Classes, Interfaces, Type Aliases, Functions).
+**TypeScript API sidebar:** When viewing pages under `docs/api/typescript/`, the middleware uses `buildTypeScriptApiSidebar()` to generate a category-grouped sidebar (Classes, Interfaces, Type Aliases, Functions).
 
 **Pagination:** For API pages, the middleware also updates `starlightRoute.pagination` using `getPrevNextLinks()` from `src/dynamic-sidebar.ts`. This ensures the previous/next navigation links at the bottom of pages work correctly with the dynamically generated sidebar. Pagination labels use actual page titles (from the docs collection) rather than sidebar nav labels.
 
@@ -79,6 +79,8 @@ From page `user-guide/concepts/agents/state.mdx`:
 
 **Slug generation:** The content collection uses a custom `generateId` function in `src/content.config.ts` that shares the same normalization logic (`normalizePathToSlug`) as link resolution. This ensures consistency between how pages are identified and how links resolve to them.
 
+The collection base is `src/content` (not `src/content/docs`), so all doc slugs include a `docs/` prefix (e.g., `docs/user-guide/concepts/agents/state`). The `generateId` function strips this prefix from path-based slugs so that URLs remain clean (e.g., `/docs/user-guide/...`). Files with an explicit `slug` frontmatter field (such as generated API docs) use that value directly and must include the `docs/` prefix themselves.
+
 ### 5. API Reference Links (`@api` shorthand)
 
 **What it does:** Provides a shorthand format for linking to API reference pages that's cleaner than relative paths.
@@ -97,7 +99,7 @@ From page `user-guide/concepts/agents/state.mdx`:
 **How it works:**
 
 1. Links starting with `@api/` are detected by `isApiShorthand()` in `src/util/links.ts`
-2. `resolveApiShorthand()` converts them to absolute paths (e.g., `/api/python/strands.agent.agent/`)
+2. `resolveApiShorthand()` converts them to absolute paths (e.g., `/docs/api/python/strands.agent.agent/`)
 3. `PageLink.astro` applies the site's base path for correct URL generation
 
 **Why use this format:**
@@ -126,7 +128,7 @@ import AutoImport from 'astro-auto-import'
 
 const sidebar = loadSidebarFromMkdocs(
   path.resolve('./mkdocs.yml'),
-  path.resolve('./src/content/docs')
+  path.resolve('./src/content')  // base is src/content, not src/content/docs
 )
 
 export default defineConfig({
@@ -398,7 +400,7 @@ The index page (`src/content/docs/api/python/index.mdx`) is a permanent file (no
 **What it does:** Builds a hierarchical sidebar structure from Python API docs at runtime, and provides pagination utilities.
 
 **How it works:**
-1. Filters docs collection for `api/python/*` pages
+1. Filters docs collection for `docs/api/python/*` pages
 2. Parses module names from page titles (e.g., `strands.agent.agent`)
 3. Builds a nested tree structure based on module path segments
 4. Converts tree to Starlight sidebar entries with groups and links
@@ -469,7 +471,7 @@ The generation script performs these transformations after typedoc runs:
    ```yaml
    ---
    title: "Agent"
-   slug: api/typescript/Agent
+   slug: docs/api/typescript/Agent
    category: classes
    editUrl: false
    ---
@@ -478,7 +480,7 @@ The generation script performs these transformations after typedoc runs:
    ```yaml
    ---
    title: "setupTracer"
-   slug: api/typescript/telemetry:setupTracer
+   slug: docs/api/typescript/telemetry:setupTracer
    category: functions
    editUrl: false
    ---
@@ -493,7 +495,7 @@ The generation script performs these transformations after typedoc runs:
 ### Flat Slugs with Category Grouping
 
 Unlike Python API docs which use hierarchical slugs based on module paths, TypeScript API docs use flat slugs:
-- URL: `/api/typescript/Agent/` (not `/api/typescript/classes/Agent/`)
+- URL: `/docs/api/typescript/Agent/` (not `/docs/api/typescript/classes/Agent/`)
 - The `category` frontmatter field is used for sidebar grouping
 
 This keeps URLs clean while still organizing the sidebar by type (Classes, Interfaces, Type Aliases, Functions).
@@ -503,7 +505,7 @@ This keeps URLs clean while still organizing the sidebar by type (Classes, Inter
 When the SDK exports a namespace (e.g., `export * as telemetry from './telemetry/index.js'`), typedoc generates a nested directory structure under `namespaces/<ns>/`. The generation script handles this specially:
 
 - The namespace index page (`namespaces/<ns>/index.md`) is kept and written as `namespaces/<ns>.mdx` with slug `api/typescript/<ns>` and category `namespaces`.
-- Members of the namespace (classes, interfaces, functions, etc.) are flattened into the same top-level category directories as regular exports, but their slugs are prefixed with the namespace name using a colon separator: `api/typescript/<ns>:<MemberName>`.
+- Members of the namespace (classes, interfaces, functions, etc.) are flattened into the same top-level category directories as regular exports, but their slugs are prefixed with the namespace name using a colon separator: `docs/api/typescript/<ns>:<MemberName>`.
 - All cross-member links within a namespace are rewritten to absolute slug paths to avoid broken relative links after flattening.
 
 ### Symlink Setup
@@ -520,7 +522,7 @@ The index page (`src/content/docs/api/typescript/index.mdx`) is a permanent file
 **What it does:** Builds a category-grouped sidebar structure from TypeScript API docs at runtime.
 
 **How it works:**
-1. Filters docs collection for `api/typescript/*` pages
+1. Filters docs collection for `docs/api/typescript/*` pages
 2. Groups docs by their `category` frontmatter field
 3. Creates sidebar groups for Classes, Interfaces, Type Aliases, and Functions
 4. Sorts entries alphabetically within each group
@@ -535,14 +537,14 @@ Classes
   └── Tool
 Interfaces
   ├── AgentConfig
-  ├── TracerConfig       ← namespace member, slug: api/typescript/telemetry:TracerConfig
+  ├── TracerConfig       ← namespace member, slug: docs/api/typescript/telemetry:TracerConfig
   └── ToolSpec
 Type Aliases
   ├── ContentBlock
   └── ToolChoice
 Functions
   ├── configureLogging
-  ├── setupTracer        ← namespace member, slug: api/typescript/telemetry:setupTracer
+  ├── setupTracer        ← namespace member, slug: docs/api/typescript/telemetry:setupTracer
   └── tool
 ```
 
