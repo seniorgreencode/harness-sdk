@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro'
 import type { CollectionEntry } from 'astro:content'
 import { getCollection, getEntry } from 'astro:content'
-import { getBase } from '@util/links'
+import { getBase, getSiteOrigin } from '@util/links'
 import { loadSidebarFromMkdocs, type StarlightSidebarItem } from '../sidebar'
 import { renderEntryToMarkdown } from '@util/render-to-markdown'
 import path from 'node:path'
@@ -42,7 +42,7 @@ function extractLinks(
 }
 
 function buildLlmsTxt(docs: CollectionEntry<'docs'>[], sidebar: StarlightSidebarItem[], header: string): string {
-  const base = getBase()
+  const base = getSiteOrigin() + getBase()
   const lines: string[] = []
 
   // Header from rendered llms.mdx

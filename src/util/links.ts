@@ -46,6 +46,19 @@ export function getBase(): string {
 }
 
 /**
+ * Get the full site origin (scheme + host) from the SITE_URL environment variable.
+ * Returns an empty string if SITE_URL is not set, so URLs remain relative.
+ *
+ * Set SITE_DOMAIN=https://strandsagents.com when building for production to get
+ * absolute URLs in llms.txt / llms-full.txt.
+ */
+export function getSiteOrigin(): string {
+  const siteUrl = import.meta.env.SITE_DOMAIN
+  if (!siteUrl) return ''
+  return siteUrl.replace(/\/$/, '')
+}
+
+/**
  * Build a URL path with the site's base path prefix.
  * Ensures the path works correctly when deployed at a subpath (e.g., example.com/docs/).
  *

@@ -713,6 +713,17 @@ The `src/util/links.ts` module was extended:
 - `toRawMarkdownUrl()` - Converts paths to index.md URLs, skips files with extensions
 - `isLocalLink()` - Identifies links that should be converted (excludes .txt, external, anchors)
 - `resolveHref()` - Special-cases `llms.txt` and `llms-full.txt` for proper resolution
+- `getSiteOrigin()` - Returns the value of the `SITE_DOMAIN` environment variable (trailing slash stripped), or an empty string if unset. Used by `llms.txt` and `llms-full.txt` to produce absolute URLs when a domain is known.
+
+### Absolute URLs via `SITE_DOMAIN`
+
+By default, links in `llms.txt` and `llms-full.txt` are relative (path-only). Set the `SITE_DOMAIN` environment variable at build time to prefix all links with the full domain:
+
+```bash
+SITE_DOMAIN=https://strandsagents.com npm run build
+```
+
+Without `SITE_DOMAIN`, links remain relative (e.g. `/user-guide/quickstart/`). With it set, they become absolute (e.g. `https://strandsagents.com/user-guide/quickstart/`).
 
 ### Dependencies Added
 

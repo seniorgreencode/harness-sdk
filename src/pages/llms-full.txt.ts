@@ -1,13 +1,13 @@
 import type { APIRoute } from 'astro'
 import { getCollection, getEntry } from 'astro:content'
 import { renderEntryToMarkdown } from '@util/render-to-markdown'
-import { getBase } from '@util/links'
+import { getBase, getSiteOrigin } from '@util/links'
 
 export const GET: APIRoute = async () => {
   const allDocs = await getCollection('docs')
   // Exclude API documentation and the llms page itself from full content
   const docs = allDocs.filter((doc) => !doc.id.startsWith('api/') && doc.id !== 'llms')
-  const base = getBase()
+  const base = getSiteOrigin() + getBase()
   const lines: string[] = []
 
   // Render the llms.mdx page as the header
