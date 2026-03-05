@@ -1,23 +1,22 @@
 # Structured Output
 
-
-{{ ts_not_supported() }}
-
 ## Introduction
 
-Structured output enables you to get type-safe, validated responses from language models using [Pydantic](https://docs.pydantic.dev/latest/concepts/models/) models. Instead of receiving raw text that you need to parse, you can define the exact structure you want and receive a validated Python object that matches your schema. This transforms unstructured LLM outputs into reliable, program-friendly data structures that integrate seamlessly with your application's type system and validation rules.
+Structured output enables you to get type-safe, validated responses from language models using schema definitions. Instead of receiving raw text that you need to parse, you can define the exact structure you want and receive a validated object that matches your schema. This transforms unstructured LLM outputs into reliable, program-friendly data structures that integrate seamlessly with your application's type system and validation rules.
+
+In Python, structured output uses [Pydantic](https://docs.pydantic.dev/latest/concepts/models/) models. In TypeScript, it uses [Zod](https://zod.dev/) schemas for runtime validation and type inference.
 
 ```mermaid
 flowchart LR
-    A[Pydantic Model] --> B[Agent Invocation]
-    B --> C[LLM] --> D[Validated Pydantic Model]
+    A[Schema Definition] --> B[Agent Invocation]
+    B --> C[LLM] --> D[Validated Object]
     D --> E[AgentResult.structured_output]
 ```
 
 Key benefits:
 
-- **Type Safety**: Get typed Python objects instead of raw strings
-- **Automatic Validation**: Pydantic validates responses against your schema
+- **Type Safety**: Get typed objects instead of raw strings
+- **Automatic Validation**: Schema validation ensures responses match your structure
 - **Clear Documentation**: Schema serves as documentation of expected output
 - **IDE Support**: IDE type hinting from LLM-generated responses
 - **Error Prevention**: Catch malformed responses early
@@ -25,7 +24,7 @@ Key benefits:
 
 ## Basic Usage
 
-Define an output structure using a Pydantic model. Then, assign the model to the `structured_output_model` parameter when invoking the [`agent`](../../../api-reference/python/agent/agent.md#strands.agent.agent). Then, access the Structured Output from the [`AgentResult`](../../../api-reference/python/agent/agent_result.md#strands.agent.agent_result).
+Define an output structure using a schema. In Python, use a Pydantic model and pass it to `structured_output_model`. In TypeScript, use a Zod schema and pass it to `structuredOutputSchema`. Then, access the validated output from the `AgentResult`.
 
 === "Python"
 
@@ -54,10 +53,14 @@ Define an output structure using a Pydantic model. Then, assign the model to the
     print(f"Job: {person_info.occupation}") # "software engineer"
     ```
 
-{{ ts_not_supported_code() }}
+=== "TypeScript"
+
+    ```typescript
+    --8<-- "user-guide/concepts/agents/structured-output.ts:basic_usage"
+    ```
 
 ???+ tip "Async Support"
-    Structured Output is supported with async via the `invoke_async` method:
+    Structured Output is supported with async in both Python and TypeScript:
 
     === "Python"
 
@@ -74,21 +77,21 @@ Define an output structure using a Pydantic model. Then, assign the model to the
 
     === "TypeScript"
         ```typescript
-        // Not supported in TypeScript
+        --8<-- "user-guide/concepts/agents/structured-output.ts:async_support"
         ```
 
 ## More Information
 
 ### How It Works
 
-The structured output system converts your Pydantic models into tool specifications that guide the language model to produce correctly formatted responses. All of the model providers supported in Strands can work with Structured Output.
+The structured output system converts your schema definitions into tool specifications that guide the language model to produce correctly formatted responses. All of the model providers supported in Strands can work with Structured Output.
 
-Strands handles this by accepting the `structured_output_model` parameter in [`agent`](../../../api-reference/python/agent/agent.md#strands.agent.agent) invocations, which manages the conversion, validation, and response processing automatically. The validated result is available in the `AgentResult.structured_output` field.
+In Python, Strands accepts the `structured_output_model` parameter in agent invocations, which manages the conversion, validation, and response processing automatically. In TypeScript, the `structuredOutputSchema` parameter (either at agent initialization or per-invocation) handles this process. The validated result is available in the `AgentResult.structured_output` (Python) or `AgentResult.structuredOutput` (TypeScript) field.
 
 
 ### Error Handling
 
-In the event there is an issue with parsing the structured output, Strands will throw a custom `StructuredOutputException` that can be caught and handled appropriately:
+When structured output validation fails, Strands throws a custom `StructuredOutputException` that can be caught and handled appropriately:
 
 === "Python"
 
@@ -102,12 +105,16 @@ In the event there is an issue with parsing the structured output, Strands will 
         print(f"Structured output failed: {e}")
     ```
 
-{{ ts_not_supported_code() }}
+=== "TypeScript"
+
+    ```typescript
+    --8<-- "user-guide/concepts/agents/structured-output.ts:error_handling"
+    ```
 
 ### Migration from Legacy API
 
-!!! warning "Deprecated API"
-    The `Agent.structured_output()` and `Agent.structured_output_async()` methods are deprecated. Use the new `structured_output_model` parameter approach instead.
+!!! warning "Deprecated API (Python Only)"
+    The `Agent.structured_output()` and `Agent.structured_output_async()` methods are deprecated in Python. Use the new `structured_output_model` parameter approach instead.
 
 #### Before (Deprecated)
 
@@ -119,7 +126,11 @@ In the event there is an issue with parsing the structured output, Strands will 
     print(result.name)  # Direct access to model fields
     ```
 
-{{ ts_not_supported_code() }}
+=== "TypeScript"
+
+    ```typescript
+    // No deprecated API in TypeScript
+    ```
 
 #### After (Recommended)
 
@@ -131,43 +142,40 @@ In the event there is an issue with parsing the structured output, Strands will 
     print(result.structured_output.name)  # Access via structured_output field
     ```
 
-{{ ts_not_supported_code() }}
+=== "TypeScript"
+
+    ```typescript
+    // TypeScript approach
+    const agent = new Agent({ structuredOutputSchema: PersonSchema })
+    const result = await agent.invoke('John is 30 years old')
+    console.log(result.structuredOutput.name)  // Access via structuredOutput field
+    ```
 
 ### Best Practices
 
-- **Keep models focused**: Define specific models for clear purposes
-- **Use descriptive field names**: Include helpful descriptions with `Field`
+- **Keep schemas focused**: Define specific schemas for clear purposes
+- **Use descriptive field names**: Include helpful descriptions with field metadata
 - **Handle errors gracefully**: Implement proper error handling strategies with fallbacks
 
 ### Related Documentation
 
-#### After (Recommended)
-
-```python
-# New approach - recommended
-result = agent("John is 30 years old", structured_output_model=PersonInfo)
-print(result.structured_output.name)  # Access via structured_output field
-```
-
-### Best Practices
-
-- **Keep models focused**: Define specific models for clear purposes
-- **Use descriptive field names**: Include helpful descriptions with `Field`
-- **Handle errors gracefully**: Implement proper error handling strategies with fallbacks
-
-### Related Documentation
-
-Refer to Pydantic documentation for details on:
+For Python, refer to Pydantic documentation:
 
 - [Models and schema definition](https://docs.pydantic.dev/latest/concepts/models/)
 - [Field types and constraints](https://docs.pydantic.dev/latest/concepts/fields/)
 - [Custom validators](https://docs.pydantic.dev/latest/concepts/validators/)
 
+For TypeScript, refer to Zod documentation:
+
+- [Zod documentation](https://zod.dev/)
+- [Schema types](https://zod.dev/?id=primitives)
+- [Schema methods](https://zod.dev/?id=strings)
+
 ## Cookbook
 
 ### Auto Retries with Validation
 
-Automatically retry validation when initial extraction fails due to field validators:
+Automatically retry validation when initial extraction fails due to schema validation:
 
 === "Python"
 
@@ -191,11 +199,15 @@ Automatically retry validation when initial extraction fails due to field valida
     result = agent("What is Aaron's name?", structured_output_model=Name)
     ```
 
-{{ ts_not_supported_code() }}
+=== "TypeScript"
+
+    ```typescript
+    --8<-- "user-guide/concepts/agents/structured-output.ts:auto_retries"
+    ```
 
 ### Streaming Structured Output
 
-Stream structured output progressively while maintaining type safety and validation:
+Stream agent execution while using structured output. The structured output is available in the final result:
 
 === "Python"
 
@@ -224,7 +236,11 @@ Stream structured output progressively while maintaining type safety and validat
             print(f'The forecast for today is: {event["result"].structured_output}')
     ```
 
-{{ ts_not_supported_code() }}
+=== "TypeScript"
+
+    ```typescript
+    --8<-- "user-guide/concepts/agents/structured-output.ts:streaming"
+    ```
 
 ### Combining with Tools
 
@@ -247,11 +263,15 @@ Combine structured output with tool usage to format tool execution results:
     res = tool_agent("What is 42 + 8", structured_output_model=MathResult)
     ```
 
-{{ ts_not_supported_code() }}
+=== "TypeScript"
+
+    ```typescript
+    --8<-- "user-guide/concepts/agents/structured-output.ts:combining_tools"
+    ```
 
 ### Multiple Output Types
 
-Reuse a single agent instance with different structured output models for varied extraction tasks:
+Reuse a single agent instance with different structured output schemas for varied extraction tasks:
 
 === "Python"
 
@@ -280,7 +300,11 @@ Reuse a single agent instance with different structured output models for varied
     task_res = agent("Create task: Review code, high priority, completed", structured_output_model=Task)
     ```
 
-{{ ts_not_supported_code() }}
+=== "TypeScript"
+
+    ```typescript
+    --8<-- "user-guide/concepts/agents/structured-output.ts:multiple_types"
+    ```
 
 ### Using Conversation History
 
@@ -315,12 +339,16 @@ Extract structured information from prior conversation context without repeating
     print(f"Country: {result.structured_output.country}") # "France"
     ```
 
-{{ ts_not_supported_code() }}
+=== "TypeScript"
+
+    ```typescript
+    --8<-- "user-guide/concepts/agents/structured-output.ts:conversation_history"
+    ```
 
 
 ### Agent-Level Defaults
 
-You can also set a default structured output model that applies to all agent invocations:
+You can also set a default structured output schema that applies to all agent invocations:
 
 === "Python"
 
@@ -339,7 +367,11 @@ You can also set a default structured output model that applies to all agent inv
     print(f"Job: {result.structured_output.occupation}") # "software engineer"
     ```
 
-{{ ts_not_supported_code() }}
+=== "TypeScript"
+
+    ```typescript
+    --8<-- "user-guide/concepts/agents/structured-output.ts:agent_defaults"
+    ```
 
 !!! note "Note"
     Since this is on the agent init level, not the invocation level, the expectation is that the agent will attempt structured output for each invocation.
@@ -347,7 +379,7 @@ You can also set a default structured output model that applies to all agent inv
 
 ### Overriding Agent Defaults
 
-Even when you set a default `structured_output_model` at the agent initialization level, you can override it for specific invocations by passing a different `structured_output_model` during the agent invocation:
+Even when you set a default schema at the agent initialization level, you can override it for specific invocations:
 
 === "Python"
 
@@ -376,4 +408,8 @@ Even when you set a default `structured_output_model` at the agent initializatio
     print(f"Size: {result.structured_output.employees}")    # 500
     ```
 
-{{ ts_not_supported_code() }}
+=== "TypeScript"
+
+    ```typescript
+    --8<-- "user-guide/concepts/agents/structured-output.ts:overriding_defaults"
+    ```
