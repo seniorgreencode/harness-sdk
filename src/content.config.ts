@@ -28,6 +28,7 @@ export const collections = {
       // in examples which are not intended to be rendered on the site.
       // Long-term we'll be moving examples into the sdk-python repository instead, solving this problem.
       pattern: [
+        "404.mdx",
         "docs/README.mdx",
         "docs/llms.mdx",
         "docs/user-guide/**/*.mdx",

@@ -696,6 +696,46 @@ Once the migration is complete and all documentation is committed in Astro forma
 5. Update this README to remove references to the migration process
 
 
+## URL Redirects (Old MkDocs URLs → New CMS URLs)
+
+The old MkDocs site used versioned URLs like `/latest/documentation/docs/<path>/` and `/1.x/documentation/docs/<path>/`. The new CMS uses clean paths like `/docs/<path>/`. Some pages also moved or were renamed. The redirect system handles both cases client-side via the 404 page.
+
+### How It Works
+
+1. **404 page** (`src/content/404.mdx`) renders `Redirect404.astro`, which runs a client-side script on every 404.
+2. **`Redirect404.astro`** (`src/components/Redirect404.astro`) calls `resolveRedirectFromUrl()` with the current URL and, if a target is found, calls `window.location.replace()` to redirect without adding a history entry.
+3. **`src/util/redirect.ts`** contains the redirect logic:
+   - `resolveRedirectFromUrl(url)` — strips the version prefix (`/latest/`, `/1.x/`, `/1.5.x/`, etc.) and the `/documentation/` segment, then delegates to `resolveRedirect()`.
+   - `resolveRedirect(slug)` — applies `SLUG_RULES` to handle structural renames (e.g. `docs/api-reference/python/...` → `docs/api/python/strands....`).
+
+### Adding New Redirect Rules
+
+Edit `SLUG_RULES` in `src/util/redirect.ts`. Each rule has a `match` regex and a `to` string or function:
+
+```typescript
+// Static rename
+{ match: exactly('docs/old/path'), to: 'docs/new/path' },
+
+// Pattern-based rename (capture group 1 = everything after the prefix)
+{ match: startsWith('docs/old-prefix'), to: (m) => `docs/new-prefix/${m[1]}` },
+```
+
+Helper builders from `src/utils/regex.ts`:
+- `startsWith(prefix)` — matches slugs starting with `prefix/`, captures the rest in `m[1]`
+- `exactly(s)` — matches the slug exactly
+
+### Testing
+
+- **`test/redirect.test.ts`** — unit tests for `resolveRedirect` and `resolveRedirectFromUrl` covering slug transforms, URL normalisation, and trailing-slash preservation.
+- **`test/sitemap-coverage.test.ts`** — integration test that fetches the live sitemap from `https://strandsagents.com/1.x/sitemap.xml` (cached in `.build/sitemap-cache.xml` for 4 hours) and asserts every old URL either exists in the CMS collection or has a valid redirect rule pointing to an existing page.
+
+Run with:
+```bash
+npm test
+```
+
+---
+
 ## LLM-Friendly Documentation (`llms.txt`)
 
 We provide machine-readable documentation following the [llms.txt specification](https://llmstxt.org/), optimized for both humans and AI agents.
