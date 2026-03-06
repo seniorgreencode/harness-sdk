@@ -605,38 +605,65 @@ The main landing page includes:
 
 ## Testimonials Content Collection
 
-Testimonials are managed as a content collection, allowing them to be stored separately and potentially shared across projects.
+Testimonials are managed as a content collection of Markdown files, with company logos stored alongside them.
 
 ### Schema (`src/content.config.ts`)
 
 ```typescript
-const testimonialSchema = z.object({
-  quote: z.string(),
-  name: z.string(),
-  title: z.string().optional(),
-  icon: z.string().optional(),  // Company logo URL
-  order: z.number().default(0),
+testimonials: defineCollection({
+  loader: glob({ base: 'src/content', pattern: 'testimonials/**/*.md' }),
+  schema: ({ image }) => z.object({
+    name: z.string(),
+    title: z.string().optional(),
+    logo: image().optional(),       // Light-mode company logo
+    dark_logo: image().optional(),  // Dark-mode variant (falls back to logo)
+    order: z.number().default(0),
+  }),
 })
 ```
 
+Using Astro's `image()` helper ensures logos are processed through the asset pipeline (hashed, optimized) at build time.
+
 ### Content Location
 
-Default: `src/content/testimonials/*.json`
+`src/content/testimonials/` — each company has a `.md` file and its logo(s) stored alongside it:
 
-The base path can be overridden via the `TESTIMONIALS_PATH` environment variable for projects that store testimonials in a different location.
+```
+src/content/testimonials/
+├── smartsheet.md
+├── smartsheet-logo.svg
+├── smartsheet-logo-white.svg   ← dark-mode variant
+├── landchecker.md
+├── landchecker-logo.svg
+└── ...
+```
 
 ### File Format
 
-Each testimonial is a JSON file:
+Each testimonial is a Markdown file with frontmatter metadata and the quote as the body:
 
-```json
-{
-  "quote": "The testimonial text...",
-  "name": "Person Name",
-  "title": "Job Title, Company Name",
-  "icon": "https://example.com/company-logo.png",
-  "order": 1
-}
+```markdown
+---
+name: JB Brown
+title: VP Engineering, Smartsheet
+logo: ./smartsheet-logo.svg
+dark_logo: ./smartsheet-logo-white.svg
+order: 1
+---
+
+At Smartsheet, we chose Strands...
+```
+
+The `order` field controls display sequence in the slider. Logo paths are relative to the file.
+
+### Dark/Light Logo Switching
+
+The landing page renders both `logo` and `dark_logo` (falling back to `logo` when no dark variant exists) and uses CSS to show the appropriate one based on Starlight's `[data-theme]` attribute:
+
+```css
+.logo-dark { display: none; }
+[data-theme='dark'] .logo-light { display: none; }
+[data-theme='dark'] .logo-dark { display: block; }
 ```
 
 ## Temporary Migration Files

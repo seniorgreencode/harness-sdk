@@ -1,4 +1,4 @@
-import { defineCollection } from 'astro:content'
+import { defineCollection, type SchemaContext } from 'astro:content'
 import { z } from 'astro/zod'
 import { docsSchema } from '@astrojs/starlight/schema'
 // github-slugger is used by Astro internally for default slug generation.
@@ -7,23 +7,19 @@ import { slug as githubSlug } from 'github-slugger'
 import { glob } from 'astro/loaders'
 import { normalizePathToSlug } from './util/links'
 
-const testimonialSchema = z.object({
-  quote: z.string(),
-  name: z.string(),
-  title: z.string().optional(),
-  icon: z.string().optional(),
-  order: z.number().default(0),
-})
-
-const testimonialsBase = import.meta.env.TESTIMONIALS_PATH || 'src/content/testimonials'
-
 export const collections = {
   testimonials: defineCollection({
     loader: glob({
-      base: testimonialsBase,
-      pattern: '**/*.json',
+      base: 'src/content',
+      pattern: 'testimonials/**/*.md',
     }),
-    schema: testimonialSchema,
+    schema: ({ image }: SchemaContext) => z.object({
+      name: z.string(),
+      title: z.string().optional(),
+      logo: image().optional(),
+      dark_logo: image().optional(),
+      order: z.number().default(0),
+    }),
   }),
   docs: defineCollection({
     loader: glob({
