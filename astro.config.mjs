@@ -1,0 +1,98 @@
+// @ts-check
+import { defineConfig } from 'astro/config'
+import starlight from '@astrojs/starlight'
+import path from 'node:path'
+import remarkMkdocsSnippets from './src/plugins/remark-mkdocs-snippets.ts'
+
+import { loadSidebarFromMkdocs } from "./src/sidebar.ts"
+import AutoImport from './src/plugins/astro-auto-import.ts'
+import astroExpressiveCode from "astro-expressive-code"
+import mdx from '@astrojs/mdx';
+import astroBrokenLinksChecker from './scripts/astro-broken-links-checker-index.js';
+
+// Generate sidebar from mkdocs nav (validates against existing content files)
+// Top-level groups will be rendered as tabs by the custom Sidebar component
+const sidebar = loadSidebarFromMkdocs(
+  path.resolve('./mkdocs.yml'),
+  path.resolve('./src/content')
+)
+
+// https://astro.build/config
+export default defineConfig({
+  site: 'https://strandsagents.com',
+  base: process.env.ASTRO_BASE_PATH || '/',
+  vite: {
+    // TODO once we separate out CMS build from TS verification, fix this
+    // https://github.com/withastro/astro/issues/14117
+		ssr: {
+			noExternal: ['zod'],
+		},
+	},
+  markdown: {
+    remarkPlugins: [remarkMkdocsSnippets],
+  },
+  integrations: [
+    astroExpressiveCode({
+      themes: ['github-light', 'github-dark'],
+      // Follow Starlight's data-theme attribute instead of the browser's prefers-color-scheme
+      themeCssSelector: (theme) => `[data-theme='${theme.type}']`,
+      styleOverrides: {
+        // Match the accent color from the site theme
+        frames: {
+          shadowColor: 'transparent',
+        },
+      },
+    }),
+    mdx(),
+    starlight({
+      markdown: {
+        // API docs are symlinked from .build/api-docs; processedDirs ensures Starlight's
+        // rehype plugins (e.g. heading anchor links) run on the real resolved paths.
+        processedDirs: [path.resolve('.build/api-docs')],
+      },
+      title: 'Strands Agents SDK',
+      description: 'A model-driven approach to building AI agents in just a few lines of code.',
+      sidebar: sidebar,
+      routeMiddleware: './src/route-middleware.ts',
+      customCss: [
+        './src/styles/custom.css',
+      ],
+      logo: {
+        light: './src/assets/logo-light.svg',
+        dark: './src/assets/logo-dark.svg',
+        replacesTitle: false,
+      },
+      editLink: {
+        baseUrl: 'https://github.com/strands-agents/docs/edit/main/',
+      },
+      components: {
+        Head: './src/components/overrides/Head.astro',
+        Header: './src/components/overrides/Header.astro',
+        MarkdownContent: './src/components/overrides/MarkdownContent.astro',
+        Sidebar: './src/components/overrides/Sidebar.astro',
+      },
+  }),
+   astroBrokenLinksChecker({
+      checkExternalLinks: false,      // Optional: check external links (default: false)
+      cacheExternalLinks: false,      // Optional: cache verified external links to disk (default: true)
+      throwError: true,               // Optional: fail the build if broken links are found (default: false)
+      linkCheckerDir: '.link-checker' // Optional: directory for cache and log files (default: '.link-checker')
+    }),
+   AutoImport({
+      imports: [
+        {
+          '@astrojs/starlight/components': [
+            ['TabItem', 'Tab']
+          ],
+          './src/components/AutoSyncTabs.astro': [
+            ['default', "Tabs"]
+          ]
+        },
+      ],
+      defaultComponents: {
+        // override 'a' links so that we can use relative urls
+        a: './src/components/PageLink.astro'
+      }
+    }),
+  ],
+})
