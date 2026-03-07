@@ -64,6 +64,9 @@ describe('Sitemap Coverage', () => {
       const resolved = resolveRedirectFromUrl(url)
       if (!resolved || resolved === '/') continue
 
+      // External redirects (e.g. GitHub) are always valid — no CMS entry needed
+      if (resolved.startsWith('https://') || resolved.startsWith('http://')) continue
+
       // Strip trailing slash to match content collection IDs
       const slug = resolved.replace(/\/$/, '')
 
@@ -107,6 +110,9 @@ describe('Sitemap Coverage', () => {
       const resolved = resolveRedirectFromUrl(url)
       if (!resolved || resolved === '/') continue
 
+      // External redirects (e.g. GitHub) are always valid
+      if (resolved.startsWith('https://') || resolved.startsWith('http://')) continue
+
       const slug = resolved.replace(/\/$/, '')
       if (!validIds.has(slug)) {
         brokenRedirects.push({ from: url, to: slug })
@@ -136,6 +142,8 @@ describe('Known Routes', () => {
     for (const routePath of knownRoutes) {
       const resolved = resolveRedirectFromUrl(`https://strandsagents.com${routePath}`)
       if (!resolved || resolved === '/') continue
+      // External redirects (e.g. GitHub) are always valid
+      if (resolved.startsWith('https://') || resolved.startsWith('http://')) continue
       const slug = resolved.replace(/\/$/, '')
       if (!validIds.has(slug)) broken.push({ url: routePath, resolved: slug })
     }

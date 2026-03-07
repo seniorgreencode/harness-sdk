@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "astro build",
-    "build:all": "npm run sdk:clone && npm run sdk:generate && npm run docs:revert && npm run docs:update && npm run build",
+    "build:all": "npm run sdk:clone && npm run sdk:generate && npm run build",
     "dev": "astro dev",
     "test": "vitest run",
     "test:prep": "timeout 10s npm run dev || true",
