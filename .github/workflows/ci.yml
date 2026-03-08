@@ -35,11 +35,5 @@ jobs:
       - name: Typecheck snippets
         run: npm run typecheck:snippets
 
-      # Astro 5's content layer only generates data-store.json when the dev server runs.
-      # Without it, vitest tests using getCollection() fail with "collection does not exist".
-      # See: https://github.com/withastro/astro/issues/12836
-      - name: Prepare tests
-        run: npm run test:prep
-
       - name: Test
         run: npm test
