@@ -24,6 +24,7 @@ import config from 'virtual:starlight/user-config'
 import ThemeProvider from 'virtual:starlight/components/ThemeProvider'
 
 import Header from '../components/overrides/Header.astro'
+import SiteScripts from '../components/SiteScripts.astro'
 import { pathWithBase } from '../util/links'
 
 interface Props {
@@ -119,7 +120,10 @@ Astro.locals.t = mockT
     <meta property="og:title" content={title} />
     {description && <meta property="og:description" content={description} />}
     <meta property="og:type" content="website" />
-    
+
+    <!-- AWS Shortbread cookie consent -->
+    <SiteScripts />
+
     <ThemeProvider />
     
     <style is:global>

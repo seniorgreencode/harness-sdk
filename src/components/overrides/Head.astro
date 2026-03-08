@@ -1,8 +1,10 @@
 ---
 /**
- * Custom Head override to add Mermaid diagram support and favicon.
+ * Custom Head override to add Mermaid diagram support, favicon, and AWS Shortbread cookie consent.
  * See ARCHITECTURE.md for details.
  */
+import SiteScripts from '../SiteScripts.astro'
+
 const { head } = Astro.locals.starlightRoute
 
 // Get base path for favicon
@@ -14,6 +16,9 @@ const faviconHref = base.endsWith('/') ? `${base}favicon.svg` : `${base}/favicon
 
 <!-- Favicon - uses logo-auto.svg which adapts to light/dark mode via prefers-color-scheme -->
 <link rel="icon" type="image/svg+xml" href={faviconHref} />
+
+<!-- AWS Shortbread cookie consent -->
+<SiteScripts />
 
 <script>
   import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs'

@@ -297,9 +297,10 @@ Replaces the default anchor element to enable MkDocs-style relative linking. Res
 
 These override default Starlight components:
 
-- **`Head.astro`**: Adds Mermaid diagram support by transforming code blocks with `language="mermaid"` into rendered diagrams.
+- **`Head.astro`**: Adds Mermaid diagram support and loads `SiteScripts` (Shortbread + WebSDK).
 - **`Header.astro`**: Custom header with navigation tabs and theme-aware logos (see [Header Navigation](#header-navigation) below).
 - **`MarkdownContent.astro`**: Injects the custom frontmatter banners (experimental, community, languages) at the top of page content.
+- **`PageFrame.astro`**: Extends Starlight's default `PageFrame` to add a full-width site footer containing the `Copyright` component. The footer spans the content area (respecting sidebar offset) with `--sl-color-bg-nav` background to match the header.
 - **`Sidebar.astro`** and **`SidebarSublist.astro`**: Custom sidebar navigation that mimics MkDocs Material theme's `navigation.sections` behavior.
 
 #### Sidebar Navigation Style
@@ -579,6 +580,7 @@ The landing page uses a custom layout that provides the Starlight header without
 - Mocks `Astro.locals.starlightRoute` with minimal data needed for the Header component
 - Mocks `Astro.locals.t` translation function (with `.all()` method for Search component)
 - Loads Figtree font from Google Fonts for landing page typography
+- Includes `SiteScripts` for Shortbread consent and WebSDK
 
 **Usage:**
 ```astro
@@ -598,6 +600,7 @@ The main landing page includes:
 - Hero section with frosted glass effect
 - Feature cards that expand on hover to show descriptions
 - Testimonials slider with fade transitions and auto-play
+- Footer with `Copyright` component (left-aligned, `--sl-color-bg-nav` background)
 
 **Assets:**
 - `src/assets/curve-primary.svg` and `src/assets/curve-secondary.svg` - Animated strand patterns

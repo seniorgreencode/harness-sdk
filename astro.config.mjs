@@ -72,6 +72,7 @@ export default defineConfig({
         Header: './src/components/overrides/Header.astro',
         MarkdownContent: './src/components/overrides/MarkdownContent.astro',
         Sidebar: './src/components/overrides/Sidebar.astro',
+        PageFrame: './src/components/overrides/PageFrame.astro',
       },
   }),
    astroBrokenLinksChecker({

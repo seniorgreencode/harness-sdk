@@ -8,6 +8,7 @@
 import { getCollection, render } from 'astro:content'
 import { Image } from 'astro:assets'
 import LandingLayout from '../layouts/LandingLayout.astro'
+import Copyright from '../components/Copyright.astro'
 import curvePrimary from '../assets/curve-primary.svg'
 import curveSecondary from '../assets/curve-secondary.svg'
 import iconZap from '../assets/icons/icon-zap.svg?raw'
@@ -130,6 +131,12 @@ const testimonials = await Promise.all(
       </div>
     </section>
   </div>
+
+  <footer class="landing-footer">
+    <div class="landing-footer-inner">
+      <Copyright />
+    </div>
+  </footer>
 </LandingLayout>
 
 <style>
@@ -534,6 +541,18 @@ const testimonials = await Promise.all(
   @media (max-width: 768px) {
     .hero-section { min-height: 50vh; padding: 1.5rem; }
     .features-section, .testimonials-section, .cta-section { padding: 2rem 1.5rem; }
+  }
+
+  .landing-footer {
+    padding: 1.5rem 2rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    background-color: var(--sl-color-bg-nav);
+  }
+
+  .landing-footer-inner {
+    max-width: 1200px;
+    text-align: left;
+    margin: 0 auto;
   }
 </style>
 
