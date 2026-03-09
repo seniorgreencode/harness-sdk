@@ -63,7 +63,7 @@ npm run dev
 
 ### Writing Documentation
 
-Documentation lives in `docs/` as Markdown files. The site structure is driven by `mkdocs.yml` (navigation) and rendered by Astro at build time.
+Documentation lives in `docs/` as Markdown files. The site structure is driven by `src/config/navigation.yml` (navigation) and rendered by Astro at build time.
 
 - Pages are written in standard Markdown — no Astro-specific syntax needed for content edits
 - Use `<Tabs>` / `<Tab label="...">` for language-switching code blocks (auto-imported, no import needed)

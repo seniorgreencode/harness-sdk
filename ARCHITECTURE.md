@@ -2,7 +2,7 @@
 
 ## Content Location
 
-`src/content/docs` is a symlink to `../../docs`. Starlight expects content in `src/content/docs/`, but we haven't fully migrated from the mkdocs structure yet. The symlink lets both systems work during the transition.
+`src/content/docs` is a symlink to `../../docs`. Starlight expects content in `src/content/docs/`, providing a consistent structure for documentation.
 
 ## Code Snippets from TypeScript Files
 

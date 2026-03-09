@@ -1,9 +1,12 @@
 /**
- * Navigation bar links configuration.
+ * Navigation bar links and GitHub dropdown configuration.
  *
- * Add, remove, or reorder links here to customize the header navigation tabs.
- * These appear as tabs below the main header on desktop viewports.
+ * This module reads navigation configuration from navigation.yml and exports
+ * processed data for use in Header component.
  */
+
+import path from 'node:path'
+import { loadNavigationConfig, type GitHubSection } from '../sidebar'
 
 export interface NavLink {
   /** Display label for the link */
@@ -55,51 +58,11 @@ function transformNavLinks(links: NavLink[]): NavLink[] {
   })
 }
 
-/**
- * Raw navigation links (without base path).
- * Order here determines display order.
- */
-const rawNavLinks: NavLink[] = [
-  {
-    label: 'Home',
-    href: '/',
-  },
-  {
-    label: 'User Guide',
-    href: '/docs/user-guide/quickstart/overview/',
-    basePath: '/docs/user-guide/',
-  },
-  {
-    label: 'Examples',
-    href: '/docs/examples/',
-    basePath: '/docs/examples/',
-  },
-  {
-    label: 'Community',
-    href: '/docs/community/community-packages/',
-    basePath: '/docs/community/',
-  },
-  {
-    label: 'Labs',
-    href: '/docs/labs/',
-    basePath: '/docs/labs/',
-  },
-  {
-    label: 'Contribute ❤️',
-    href: '/docs/contribute/',
-    basePath: '/docs/contribute/',
-  },
-  {
-    label: 'Python API',
-    href: '/docs/api/python/',
-    basePath: '/docs/api/python/',
-  },
-  {
-    label: 'TypeScript API',
-    href: '/docs/api/typescript/',
-    basePath: '/docs/api/typescript/',
-  },
-]
+// Load configuration from navigation.yml
+const configPath = path.resolve('./src/config/navigation.yml')
+const config = loadNavigationConfig(configPath)
+const rawNavLinks: NavLink[] = config.navbar || []
+const rawGithubSections: GitHubSection[] = config.github?.sections || []
 
 /**
  * Navigation links with base path applied.
@@ -108,33 +71,6 @@ const rawNavLinks: NavLink[] = [
 export const navLinks: NavLink[] = transformNavLinks(rawNavLinks)
 
 /**
- * GitHub links shown in the header dropdown (desktop) and mobile nav menu.
- * Grouped into sections with a title and list of links.
+ * GitHub sections for the header dropdown.
  */
-export interface GitHubLink {
-  label: string
-  href: string
-  icon?: string
-}
-
-export interface GitHubSection {
-  title: string
-  links: GitHubLink[]
-}
-
-export const githubSections: GitHubSection[] = [
-  {
-    title: 'SDKs',
-    links: [
-      { label: 'sdk-python', href: 'https://github.com/strands-agents/sdk-python', icon: 'PY' },
-      { label: 'sdk-typescript', href: 'https://github.com/strands-agents/sdk-typescript', icon: 'TS' },
-    ],
-  },
-  {
-    title: 'Organizations',
-    links: [
-      { label: 'strands-agents', href: 'https://github.com/strands-agents' },
-      { label: 'strands-labs', href: 'https://github.com/strands-labs' },
-    ],
-  },
-]
+export const githubSections: GitHubSection[] = rawGithubSections

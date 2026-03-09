@@ -2,7 +2,7 @@ import type { APIRoute } from 'astro'
 import type { CollectionEntry } from 'astro:content'
 import { getCollection, getEntry } from 'astro:content'
 import { getBase, getSiteOrigin } from '@util/links'
-import { loadSidebarFromMkdocs, type StarlightSidebarItem } from '../sidebar'
+import { loadSidebarFromConfig, type StarlightSidebarItem } from '../sidebar'
 import { renderEntryToMarkdown } from '@util/render-to-markdown'
 import path from 'node:path'
 
@@ -97,8 +97,8 @@ function buildLlmsTxt(docs: CollectionEntry<'docs'>[], sidebar: StarlightSidebar
 
 export const GET: APIRoute = async () => {
   const docs = await getCollection('docs')
-  const sidebar = loadSidebarFromMkdocs(
-    path.resolve('./mkdocs.yml'),
+  const sidebar = loadSidebarFromConfig(
+    path.resolve('./src/config/navigation.yml'),
     path.resolve('./src/content')
   )
 

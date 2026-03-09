@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { getCollection } from 'astro:content'
 import path from 'node:path'
-import { loadSidebarFromMkdocs, type StarlightSidebarItem } from '../src/sidebar'
+import { loadSidebarFromConfig, type StarlightSidebarItem } from '../src/sidebar'
 
 describe('Content Collections', () => {
   it('should list all doc contents', async () => {
@@ -22,9 +22,9 @@ describe('Content Collections', () => {
   })
 
   it('should have valid slugs for all sidebar items', async () => {
-    const mkdocsPath = path.resolve('./mkdocs.yml')
+    const configPath = path.resolve('./src/config/navigation.yml')
     const docsDir = path.resolve('./docs')
-    const sidebar = loadSidebarFromMkdocs(mkdocsPath, docsDir)
+    const sidebar = loadSidebarFromConfig(configPath, docsDir)
     const docs = await getCollection('docs')
 
     // Build a set of valid doc IDs

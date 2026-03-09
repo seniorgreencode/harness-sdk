@@ -10,15 +10,11 @@ We're using [Astro](https://astro.build/) with the [Starlight](https://starlight
 
 ### 1. Sidebar Generation (`src/sidebar.ts`)
 
-**What it does:** Reads the navigation structure from `mkdocs.yml` and converts it to Starlight's sidebar format. Also extracts sidebar labels and badges from nav entries.
+**What it does:** Reads the navigation structure from `src/config/navigation.yml` and converts it to Starlight's sidebar format.
 
-**Why:** Starlight can auto-generate sidebars from the file structure, but we have a specific navigation layout defined in `mkdocs.yml` that we want to preserve. This ensures consistency during the migration from MkDocs to Astro.
+**Why:** Starlight can auto-generate sidebars from the file structure, but we have a specific navigation layout defined in `navigation.yml` that we want to preserve. The config file also contains navbar and GitHub dropdown configuration.
 
-**Label and badge extraction:** The `getSidebarLabels()` function parses nav entries with `<sup>` tags (e.g., `AWS Lambda<sup> new</sup>`) and extracts:
-- `label`: The clean text without HTML tags (e.g., "AWS Lambda")
-- `badge`: The badge text from `<sup>` tags (e.g., "new", "community")
-
-This data is used by `scripts/update-docs.ts` to generate sidebar frontmatter during the migration process.
+**Badges:** Badges (like "new", "community", "experimental") come from page frontmatter, not the navigation config. This allows page authors to control badges directly.
 
 ### 2. Route Middleware (`src/route-middleware.ts`)
 
@@ -122,12 +118,12 @@ The collection base is `src/content` (not `src/content/docs`), so all doc slugs 
 The main config ties everything together:
 
 ```javascript
-import { loadSidebarFromMkdocs } from "./src/sidebar.ts"
+import { loadSidebarFromConfig } from "./src/sidebar.ts"
 import remarkMkdocsSnippets from './src/plugins/remark-mkdocs-snippets.ts'
 import AutoImport from 'astro-auto-import'
 
-const sidebar = loadSidebarFromMkdocs(
-  path.resolve('./mkdocs.yml'),
+const sidebar = loadSidebarFromConfig(
+  path.resolve('./src/config/navigation.yml'),
   path.resolve('./src/content')  // base is src/content, not src/content/docs
 )
 
@@ -164,20 +160,6 @@ export default defineConfig({
 Notable config details:
 - `themeCssSelector` on Expressive Code makes code block themes follow Starlight's `[data-theme]` attribute rather than the browser's `prefers-color-scheme`, keeping syntax highlighting in sync with the site's theme toggle.
 - `processedDirs` tells Starlight to run its rehype plugins (e.g. heading anchor links) on the real resolved paths of the API docs symlinks.
-
-## Temporary Migration Script (`scripts/update-docs.ts`)
-
-**What it does:** Converts documentation files from MkDocs markdown format to Astro/Starlight markdown format.
-
-**Why:** MkDocs and Astro use different markdown conventions. Rather than updating Astro's parser to support MkDocs syntax, we convert files to what Astro expects. This runs at build time because the main branch (still in MkDocs format) is a moving target until migration is complete.
-
-**Current approach:** Source control keeps files in MkDocs format. The script runs at build time to transform them. Once migration is complete, we'll do a final conversion, remove the script, and commit the transformed files directly.
-
-For detailed information about what transformations the script performs (and what's planned), see [`scripts/update-docs.md`](scripts/update-docs.md).
-
-Notable behaviors:
-- Collapsible MkDocs admonitions (`???` and `???+`) are converted alongside standard `!!!` admonitions.
-- Bidirectional-streaming pages are excluded from receiving the experimental sidebar badge (the badge is already present via other means for those pages).
 
 ## Custom Frontmatter Fields
 
@@ -243,14 +225,7 @@ sidebar:
 
 Available variants: `note`, `tip`, `caution`, `danger`, `success`, `default`
 
-**Automatic extraction:** During migration, `scripts/update-docs.ts` automatically generates sidebar frontmatter from `mkdocs.yml` nav entries. Entries like `AWS Lambda<sup> new</sup>` become:
-```yaml
-sidebar:
-  label: "AWS Lambda"
-  badge:
-    text: New
-    variant: note
-```
+**Badge sources:** Badges like "Experimental" or "Community" are determined from page frontmatter. Add a `sidebar.badge` field to a page's frontmatter to display a badge in the sidebar.
 
 ## MDX Components
 
@@ -682,21 +657,11 @@ These files handle converting old MkDocs-style API reference links to the new `@
 
 ### Migration Scripts
 
-These scripts transform MkDocs markdown to Astro-compatible format at build time:
+These scripts assist with documentation maintenance:
 
-- `scripts/update-docs.ts` - Main transformation script (converts admonitions, tabs, API links, etc.)
 - `scripts/update-quickstart.ts` - Quickstart-specific transformations
-- `test/update-docs.test.ts` - Tests for the update-docs transformations
-
-### When to Delete
-
-Once the migration is complete and all documentation is committed in Astro format:
-
-1. Run `npm run docs:update` one final time to apply all transformations
-2. Commit the transformed files directly (no longer keeping MkDocs format in source control)
-3. Delete the files listed above
-4. Remove the `docs:update` and `docs:revert` scripts from `package.json`
-5. Update this README to remove references to the migration process
+- `scripts/update-language-index.ts` - Updates language index pages
+- `test/update-docs.test.ts` - Tests for API link conversion utilities
 
 
 ## URL Redirects (Old MkDocs URLs → New CMS URLs)

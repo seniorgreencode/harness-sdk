@@ -5,16 +5,16 @@ import path from 'node:path'
 import remarkMkdocsSnippets from './src/plugins/remark-mkdocs-snippets.ts'
 import sdkSetupPlugin from './src/plugins/vite-plugin-sdk-setup.ts'
 
-import { loadSidebarFromMkdocs } from "./src/sidebar.ts"
+import { loadSidebarFromConfig } from "./src/sidebar.ts"
 import AutoImport from './src/plugins/astro-auto-import.ts'
 import astroExpressiveCode from "astro-expressive-code"
 import mdx from '@astrojs/mdx';
 import astroBrokenLinksChecker from './scripts/astro-broken-links-checker-index.js';
 
-// Generate sidebar from mkdocs nav (validates against existing content files)
+// Generate sidebar from navigation.yml config (validates against existing content files)
 // Top-level groups will be rendered as tabs by the custom Sidebar component
-const sidebar = loadSidebarFromMkdocs(
-  path.resolve('./mkdocs.yml'),
+const sidebar = loadSidebarFromConfig(
+  path.resolve('./src/config/navigation.yml'),
   path.resolve('./src/content')
 )
 

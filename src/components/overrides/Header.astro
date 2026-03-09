@@ -16,7 +16,8 @@ import Search from 'virtual:starlight/components/Search';
 import ThemeSelect from 'virtual:starlight/components/ThemeSelect';
 import { Icon } from '@astrojs/starlight/components';
 
-import { navLinks, githubSections, type NavLink, type GitHubSection } from '../../config/navbar';
+import { navLinks, githubSections, type NavLink } from '../../config/navbar';
+import type { GitHubSection } from '../../sidebar';
 import GitHubDropdown from '../GitHubDropdown.astro';
 import { findCurrentNavSection } from '../../route-middleware';
 import logoHeaderDark from '../../assets/logo-header-dark.svg';

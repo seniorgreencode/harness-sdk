@@ -14,8 +14,6 @@
     "clean": "rm -rf .build && rm -rf .astro",
     "preview": "astro preview",
     "cms:build": "npm run build:all",
-    "docs:update": "tsx scripts/update-docs.ts",
-    "docs:revert": "git checkout HEAD -- docs/ && git clean -d -f src/content/docs",
     "sdk:clone": "tsx scripts/clone-sdks.ts",
     "sdk:generate:py": "command -v uv >/dev/null 2>&1 && uv run scripts/api-generation-python.py || (pip install pydoc-markdown>=4.8.2 && python scripts/api-generation-python.py)",
     "sdk:generate:ts": "tsx scripts/api-generation-typescript.ts",

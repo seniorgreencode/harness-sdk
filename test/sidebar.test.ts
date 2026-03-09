@@ -1,12 +1,18 @@
 import { describe, it, expect } from 'vitest'
 import path from 'node:path'
-import { loadSidebarFromMkdocs, convertNavItem, mdPathToSlug, type StarlightSidebarItem } from '../src/sidebar'
+import {
+  loadSidebarFromConfig,
+  loadNavigationConfig,
+  loadNavbarFromConfig,
+  loadGitHubSectionsFromConfig,
+  type StarlightSidebarItem,
+} from '../src/sidebar'
 
-const pathToMkdocsYaml = path.resolve('./mkdocs.yml')
+const pathToNavigationYml = path.resolve('./src/config/navigation.yml')
 
-describe('Sidebar Generation', () => {
-  it('should generate sidebar structure from mkdocs.yml', () => {
-    const sidebar = loadSidebarFromMkdocs(pathToMkdocsYaml)
+describe('Sidebar Generation from navigation.yml', () => {
+  it('should generate sidebar structure from navigation.yml', () => {
+    const sidebar = loadSidebarFromConfig(pathToNavigationYml)
 
     console.log('\n=== Generated Sidebar Structure ===\n')
     console.log(JSON.stringify(sidebar, null, 2))
@@ -16,40 +22,86 @@ describe('Sidebar Generation', () => {
     expect(sidebar.length).toBeGreaterThan(0)
   })
 
-  it('should convert README.md to index slug', () => {
-    expect(mdPathToSlug('README.md')).toBe('docs/index')
-    expect(mdPathToSlug('examples/README.md')).toBe('docs/examples')
+  it('should load navigation config with all sections', () => {
+    const config = loadNavigationConfig(pathToNavigationYml)
+
+    expect(config).toBeDefined()
+    expect(config.navbar).toBeDefined()
+    expect(Array.isArray(config.navbar)).toBe(true)
+    expect(config.sidebar).toBeDefined()
+    expect(Array.isArray(config.sidebar)).toBe(true)
+    expect(config.github).toBeDefined()
+    expect(config.github.sections).toBeDefined()
   })
 
-  it('should strip .md extension and handle index files', () => {
-    expect(mdPathToSlug('user-guide/quickstart/overview.md')).toBe('docs/user-guide/quickstart/overview')
-    expect(mdPathToSlug('user-guide/concepts/tools/index.md')).toBe('docs/user-guide/concepts/tools')
+  it('should load navbar links', () => {
+    const navbar = loadNavbarFromConfig(pathToNavigationYml)
+
+    expect(navbar).toBeDefined()
+    expect(Array.isArray(navbar)).toBe(true)
+    expect(navbar.length).toBeGreaterThan(0)
+
+    // Check that navbar links have required properties
+    const firstLink = navbar[0]
+    expect(firstLink).toHaveProperty('label')
+    expect(firstLink).toHaveProperty('href')
   })
 
-  it('should handle external links', () => {
-    const item = convertNavItem({ 'Contribute ❤️': 'https://github.com/example' })
-    expect(item).toEqual({
-      label: 'Contribute ❤️',
-      link: 'https://github.com/example',
-      attrs: { target: '_blank' },
-    })
+  it('should load GitHub sections', () => {
+    const sections = loadGitHubSectionsFromConfig(pathToNavigationYml)
+
+    expect(sections).toBeDefined()
+    expect(Array.isArray(sections)).toBe(true)
+    expect(sections.length).toBeGreaterThan(0)
+
+    // Check that sections have required structure
+    const firstSection = sections[0]
+    expect(firstSection).toHaveProperty('title')
+    expect(firstSection).toHaveProperty('links')
+    expect(Array.isArray(firstSection.links)).toBe(true)
   })
 
-  it('should handle nested items', () => {
-    const item = convertNavItem({
-      Quickstart: [{ 'Getting Started': 'overview.md' }, { Python: 'python.md' }],
-    })
-    // Internal links omit labels - Starlight uses page title from frontmatter
-    expect(item).toEqual({
-      label: 'Quickstart',
-      items: [{ slug: 'docs/overview' }, { slug: 'docs/python' }],
-    })
+  it('should have correct top-level sidebar sections', () => {
+    const sidebar = loadSidebarFromConfig(pathToNavigationYml)
+
+    // Check that we have the expected top-level sections
+    const topLevelLabels = sidebar
+      .filter((item): item is StarlightSidebarItem & { label: string } => 'label' in item)
+      .map((item) => item.label)
+
+    expect(topLevelLabels).toContain('User Guide')
+    expect(topLevelLabels).toContain('Examples')
+    expect(topLevelLabels).toContain('Community')
+    expect(topLevelLabels).toContain('Labs')
+    expect(topLevelLabels).toContain('Contribute ❤️')
   })
 
-  it('should omit labels for internal links in final output (uses page title from frontmatter)', () => {
-    // The final Starlight output should not include labels for internal links
-    // Starlight will automatically use the page's title frontmatter
-    const sidebar = loadSidebarFromMkdocs(pathToMkdocsYaml)
+  it('should have collapsed groups at depth >= 1', () => {
+    const sidebar = loadSidebarFromConfig(pathToNavigationYml)
+
+    // Find the User Guide section
+    const userGuide = sidebar.find(
+      (item): item is StarlightSidebarItem & { label: string; items: StarlightSidebarItem[] } =>
+        'label' in item && item.label === 'User Guide'
+    )
+
+    expect(userGuide).toBeDefined()
+    if (userGuide) {
+      // Top level should not be collapsed
+      expect(userGuide).not.toHaveProperty('collapsed')
+
+      // Find a nested group (like "Quickstart")
+      const quickstart = userGuide.items.find(
+        (item): item is StarlightSidebarItem & { label: string } => 'label' in item && item.label === 'Quickstart'
+      )
+
+      // Nested groups should be collapsed
+      expect(quickstart).toHaveProperty('collapsed', true)
+    }
+  })
+
+  it('should have slugs without labels for file items', () => {
+    const sidebar = loadSidebarFromConfig(pathToNavigationYml)
 
     // Find a leaf item (internal link) and verify it has slug but no label
     function findLeafItem(items: StarlightSidebarItem[]): StarlightSidebarItem | null {
@@ -70,26 +122,28 @@ describe('Sidebar Generation', () => {
     expect(leafItem).toHaveProperty('slug')
     expect(leafItem).not.toHaveProperty('label')
   })
-})
 
-describe('getCommunityLabeledFiles', () => {
-  it('should extract files with <sup> community</sup> in nav label', async () => {
-    const { getCommunityLabeledFiles } = await import('../src/sidebar')
-    const communityFiles = getCommunityLabeledFiles(path.resolve('mkdocs.yml'))
+  it('should handle external links in sidebar', () => {
+    const sidebar = loadSidebarFromConfig(pathToNavigationYml)
 
-    console.log('\n=== Community Labeled Files ===\n')
-    console.log([...communityFiles])
+    // Find the Contribute section which has an external link
+    const contribute = sidebar.find(
+      (item): item is StarlightSidebarItem & { label: string } =>
+        'label' in item && item.label === 'Contribute ❤️'
+    )
 
-    expect(communityFiles).toBeDefined()
-    expect(communityFiles instanceof Set).toBe(true)
+    expect(contribute).toBeDefined()
+    if (contribute && 'items' in contribute) {
+      // Look for external links in the items
+      const externalLink = (contribute.items as StarlightSidebarItem[]).find(
+        (item): item is StarlightSidebarItem & { link: string } => 'link' in item && item.link?.startsWith('http')
+      )
 
-    // Should find the community-labeled model providers
-    expect(communityFiles.has('user-guide/concepts/model-providers/cohere.md')).toBe(true)
-    expect(communityFiles.has('user-guide/concepts/model-providers/clova-studio.md')).toBe(true)
-    expect(communityFiles.has('user-guide/concepts/model-providers/fireworksai.md')).toBe(true)
-    expect(communityFiles.has('user-guide/concepts/model-providers/nebius-token-factory.md')).toBe(true)
-
-    // Should NOT include non-community files
-    expect(communityFiles.has('user-guide/concepts/model-providers/openai.md')).toBe(false)
+      // If there's an external link, it should have the right attributes
+      if (externalLink) {
+        expect(externalLink).toHaveProperty('attrs')
+        expect(externalLink.attrs).toHaveProperty('target', '_blank')
+      }
+    }
   })
 })

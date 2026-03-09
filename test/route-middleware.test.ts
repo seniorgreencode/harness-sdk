@@ -6,7 +6,7 @@ import {
   expandFirstLevelGroups,
 } from '../src/route-middleware'
 import { type NavLink } from '../src/config/navbar'
-import { loadSidebarFromMkdocs, type StarlightSidebarItem } from '../src/sidebar'
+import { loadSidebarFromConfig, type StarlightSidebarItem } from '../src/sidebar'
 
 // Sidebar entry types matching Starlight's runtime structure
 type SidebarLink = { type: 'link'; label: string; href: string; isCurrent: boolean }
@@ -119,13 +119,13 @@ describe('findCurrentNavSection', () => {
   })
 })
 
-describe('Sidebar filtering with live mkdocs.yml data', () => {
-  const mkdocsPath = path.resolve('./mkdocs.yml')
+describe('Sidebar filtering with live navigation.yml data', () => {
+  const configPath = path.resolve('./src/config/navigation.yml')
   const docsDir = path.resolve('./src/content')
-  const buildTimeSidebar = loadSidebarFromMkdocs(mkdocsPath, docsDir)
+  const buildTimeSidebar = loadSidebarFromConfig(configPath, docsDir)
   const runtimeSidebar = convertToRuntimeFormat(buildTimeSidebar)
 
-  it('should have loaded sidebar from mkdocs.yml', () => {
+  it('should have loaded sidebar from navigation.yml', () => {
     expect(runtimeSidebar.length).toBeGreaterThan(0)
     console.log(`\nLoaded ${runtimeSidebar.length} top-level sidebar items`)
   })
@@ -184,9 +184,9 @@ describe('Sidebar filtering with live mkdocs.yml data', () => {
 })
 
 describe('Integration: Full filtering flow', () => {
-  const mkdocsPath = path.resolve('./mkdocs.yml')
+  const configPath = path.resolve('./src/config/navigation.yml')
   const docsDir = path.resolve('./src/content')
-  const buildTimeSidebar = loadSidebarFromMkdocs(mkdocsPath, docsDir)
+  const buildTimeSidebar = loadSidebarFromConfig(configPath, docsDir)
   const runtimeSidebar = convertToRuntimeFormat(buildTimeSidebar)
 
   it('should correctly filter sidebar for /examples/ page', () => {

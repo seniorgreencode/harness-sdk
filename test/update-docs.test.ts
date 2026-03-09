@@ -2,13 +2,12 @@ import { describe, it, expect } from 'vitest'
 import { isOldApiLink, convertApiLink } from '../src/util/api-link-converter'
 
 /**
- * Test the convertApiLinks function behavior by testing the underlying utilities
- * that update-docs.ts uses.
+ * Test the API link conversion utilities.
  */
-describe('update-docs API link conversion', () => {
+describe('API link conversion', () => {
   /**
-   * Simulate the convertApiLinks function from update-docs.ts
-   * Uses a more robust regex that handles nested brackets in link text
+   * Helper function to convert API links in markdown content
+   * Uses a regex that handles nested brackets in link text
    */
   function convertApiLinks(content: string): string {
     // Match markdown links with potentially nested brackets in the text

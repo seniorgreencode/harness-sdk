@@ -26,7 +26,7 @@ npm run build      # generates static site
 ### Writing Docs
 
 - Content lives in `docs/` as standard Markdown files
-- Navigation structure is defined in `mkdocs.yml`
+- Navigation structure is defined in `src/config/navigation.yml`
 - Use `<Tabs>` / `<Tab label="...">` for Python/TypeScript code tabs (auto-imported)
 - Use `--8<-- "path/to/file.ts:snippet_name"` to pull in code snippets from external files
 - Relative file links (e.g. `../tools/index.md`) resolve automatically — no need to use slugs
