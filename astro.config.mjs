@@ -4,6 +4,7 @@ import starlight from '@astrojs/starlight'
 import path from 'node:path'
 import remarkMkdocsSnippets from './src/plugins/remark-mkdocs-snippets.ts'
 import sdkSetupPlugin from './src/plugins/vite-plugin-sdk-setup.ts'
+import watchNavigationPlugin from './src/plugins/vite-plugin-watch-navigation.ts'
 
 import { loadSidebarFromConfig } from "./src/sidebar.ts"
 import AutoImport from './src/plugins/astro-auto-import.ts'
@@ -26,7 +27,7 @@ export default defineConfig({
     '/latest': '/',
   },
   vite: {
-    plugins: [sdkSetupPlugin()],
+    plugins: [sdkSetupPlugin(), watchNavigationPlugin()],
     // TODO once we separate out CMS build from TS verification, fix this
     // https://github.com/withastro/astro/issues/14117
 		ssr: {
