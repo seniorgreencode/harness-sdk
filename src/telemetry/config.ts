@@ -8,6 +8,8 @@
  * @see https://github.com/strands-agents/sdk-typescript/issues/447
  */
 
+import { trace } from '@opentelemetry/api'
+import type { Tracer as OtelTracer } from '@opentelemetry/api'
 import { Resource, envDetectorSync } from '@opentelemetry/resources'
 import {
   BasicTracerProvider,
@@ -42,6 +44,35 @@ const DEFAULT_DEPLOYMENT_ENVIRONMENT = 'development'
  */
 export function getServiceName(): string {
   return globalThis?.process?.env?.OTEL_SERVICE_NAME || DEFAULT_SERVICE_NAME
+}
+
+/**
+ * Get an OpenTelemetry Tracer instance.
+ *
+ * Wraps the OTel trace API to provide a consistent tracer scoped to the
+ * configured service name.
+ *
+ * @returns An OTel Tracer instance from the global tracer provider
+ *
+ * @example
+ * ```typescript
+ * import { telemetry } from '@strands-agents/sdk'
+ *
+ * // Set up telemetry first (or register your own NodeTracerProvider)
+ * telemetry.setupTracer({ exporters: { otlp: true } })
+ *
+ * // Get a tracer and create custom spans
+ * const tracer = telemetry.getTracer()
+ * const span = tracer.startSpan('my-custom-operation')
+ * span.setAttribute('custom.key', 'value')
+ *
+ * // ........
+ *
+ * span.end()
+ * ```
+ */
+export function getTracer(): OtelTracer {
+  return trace.getTracer(getServiceName())
 }
 
 /**
