@@ -68,6 +68,7 @@ sidebar:
           - label: Plugins
             items:
               - docs/user-guide/concepts/plugins
+              - docs/user-guide/concepts/plugins/skills
               - docs/user-guide/concepts/plugins/steering
           - label: Model Providers
             items:
