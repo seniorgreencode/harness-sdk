@@ -59,6 +59,7 @@
     "pino-pretty": "^13.0.0",
     "remark-parse": "^11.0.0",
     "remark-stringify": "^11.0.0",
+    "sitemapper": "^4.1.4",
     "tsx": "^4.21.0",
     "typedoc": "^0.28.14",
     "typedoc-plugin-markdown": "^4.10.0",

@@ -695,7 +695,7 @@ Helper builders from `src/utils/regex.ts`:
 ### Testing
 
 - **`test/redirect.test.ts`** — unit tests for `resolveRedirect` and `resolveRedirectFromUrl` covering slug transforms, URL normalisation, and trailing-slash preservation.
-- **`test/sitemap-coverage.test.ts`** — integration test that fetches the live sitemap from `https://strandsagents.com/1.x/sitemap.xml` (cached in `.build/sitemap-cache.xml` for 4 hours) and asserts every old URL either exists in the CMS collection or has a valid redirect rule pointing to an existing page.
+- **`test/sitemap-coverage.test.ts`** — integration test that fetches the live sitemap from `https://strandsagents.com/sitemap-index.xml` using the `sitemapper` npm package (cached in `.build/sitemap-cache.json` for 4 hours) and asserts every URL either exists in the CMS collection (docs, blog posts, author pages, tag pages) or has a valid redirect rule pointing to an existing page. API reference paths (`/docs/api/python/` and `/docs/api/typescript/`) are excluded. Controlled by the `VERIFY_LIVE_SITEMAP=true` environment variable — skipped by default locally, intended to enabled in CI before deployment.
 
 Run with:
 ```bash
