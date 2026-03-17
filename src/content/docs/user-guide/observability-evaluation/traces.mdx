@@ -92,11 +92,22 @@ Strands natively integrates with OpenTelemetry, an industry standard for distrib
 <Tabs>
 <Tab label="Python">
 
-!!! warning "To enable OTEL exporting, install Strands Agents with `otel` extra dependencies: `pip install 'strands-agents[otel]'`"
+:::note[Install OpenTelemetry Dependencies]
+To enable OTEL exporting, install Strands Agents with `otel` optional dependency:
+
+```shell
+pip install 'strands-agents[otel]'
+```
+:::
 </Tab>
 <Tab label="TypeScript">
 
-:::caution[To enable OTEL exporting, install the OpenTelemetry peer dependencies: `npm install @opentelemetry/api @opentelemetry/sdk-trace-node @opentelemetry/sdk-trace-base @opentelemetry/resources @opentelemetry/exporter-trace-otlp-http`]
+:::note[Install OpenTelemetry Dependencies]
+To enable OTEL exporting, install the OpenTelemetry peer dependencies: 
+
+```shell
+npm install @opentelemetry/api @opentelemetry/sdk-trace-node @opentelemetry/sdk-trace-base @opentelemetry/resources @opentelemetry/exporter-trace-otlp-http
+```
 :::
 </Tab>
 </Tabs>

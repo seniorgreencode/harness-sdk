@@ -357,7 +357,8 @@ See [Basic Usage](#basic-usage) for configuration examples.
 - **Node Execution**: Synchronizes orchestrator state after node transitions.
 - **Multi-Agent Invocation**: Captures final orchestrator state after execution.
 
-:::caution[After initializing the agent, direct modifications to `agent.messages` will not be persisted. Utilize the [Conversation Manager](./conversation-management.md) to help manage context of the agent in a way that can be persisted.]
+:::note[Direct Message Modifications Not Persisted]
+After initializing the agent, direct modifications to `agent.messages` will not be persisted. Utilize the [Conversation Manager](./conversation-management.md) to help manage context of the agent in a way that can be persisted.
 :::
 
 ## Immutable Snapshots *(TypeScript only)*
