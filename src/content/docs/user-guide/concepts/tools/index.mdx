@@ -458,6 +458,34 @@ with sse_mcp_client:
 
 For more information on using MCP tools, see [MCP Tools](mcp-tools.md).
 
+### 4. Agents as Tools
+
+Agents can be passed directly in another agent's `tools` array — the SDK automatically converts them into tools. Use `.as_tool()` when you need to customize the tool name, description, or context behavior. For full details, see [Agents as Tools](../multi-agent/agents-as-tools.md).
+
+<Tabs>
+<Tab label="Python">
+
+```python
+from strands import Agent
+
+research_agent = Agent(
+    system_prompt="You are a specialized research assistant.",
+)
+
+orchestrator = Agent(
+    system_prompt="You are an assistant that routes queries to specialized agents.",
+    tools=[research_agent],
+)
+```
+</Tab>
+<Tab label="TypeScript">
+
+```typescript
+// Automatic agent-to-tool conversion not yet supported in TypeScript.
+```
+</Tab>
+</Tabs>
+
 ## Tool Design Best Practices
 
 ### Effective Tool Descriptions
