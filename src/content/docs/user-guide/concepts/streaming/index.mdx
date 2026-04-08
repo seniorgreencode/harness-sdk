@@ -179,6 +179,56 @@ See [Graph streaming](../multi-agent/graph.md#streaming-events) and [Swarm strea
 </Tab>
 </Tabs>
 
+### Event Serialization
+
+<Tabs>
+<Tab label="Python">
+
+Python streaming events are plain dictionaries. The SDK does not include a built-in serialization filter — you have full control over which events and fields to forward from your processes and servers.
+
+When serving streamed responses (for example, over SSE or WebSockets), you can filter the yielded events to keep payloads compact:
+
+```python
+import json
+
+def filter_event(event: dict) -> dict | None:
+    """Filter streaming events to only forward relevant data over the wire."""
+    # Forward text deltas for real-time display
+    if "data" in event:
+        return {"type": "text", "data": event["data"]}
+
+    # Forward tool usage for progress indicators
+    if "current_tool_use" in event and event["current_tool_use"].get("name"):
+        return {"type": "tool", "name": event["current_tool_use"]["name"]}
+
+    # Forward the final result
+    if "result" in event:
+        return {"type": "result", "stop_reason": str(event["result"].stop_reason)}
+
+    # Skip everything else (lifecycle signals, raw deltas, reasoning, etc.)
+    return None
+
+
+async for event in agent.stream_async("Hello"):
+    filtered = filter_event(event)
+    if filtered:
+        await response.write(f"data: {json.dumps(filtered)}\n\n")
+```
+
+This approach lets you tailor the streamed output to your use case — for example, forwarding only text deltas for a chat UI or including tool events for a progress dashboard.
+</Tab>
+<Tab label="TypeScript">
+
+Every event class implements a `toJSON()` method that `JSON.stringify()` calls automatically. Each serialized event retains its `type` discriminator and the relevant data fields — matching the general shape of the class — while excluding in-memory runtime references (`agent`, `orchestrator`, `state`, `tool`) and mutable hook properties (`cancel`, `retry`). `Error` objects are converted to `{ message: string }`. This applies to single-agent, multi-agent, and A2A events alike.
+
+You can filter which events to forward to the client:
+
+```typescript
+--8<-- "user-guide/concepts/streaming/overview.ts:event_serialization"
+```
+</Tab>
+</Tabs>
+
 ## Quick Examples
 <Tabs>
 <Tab label="Python">

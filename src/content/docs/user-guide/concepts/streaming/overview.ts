@@ -122,3 +122,34 @@ async function subAgentStreamingExample() {
 
   // --8<-- [end:sub_agent_basic]
 }
+
+// Event Serialization Example
+async function eventSerializationExample() {
+  const agent = new Agent()
+
+  // --8<-- [start:event_serialization]
+  for await (const event of agent.stream('Hello')) {
+    switch (event.type) {
+      // Forward text deltas for real-time display
+      case 'modelStreamUpdateEvent':
+        if (
+          event.event.type === 'modelContentBlockDeltaEvent' &&
+          event.event.delta.type === 'textDelta'
+        ) {
+          console.log(`data: ${JSON.stringify({ type: 'text', text: event.event.delta.text })}`)
+        }
+        break
+
+      // Forward tool names for progress indicators
+      case 'beforeToolCallEvent':
+        console.log(`data: ${JSON.stringify({ type: 'tool', name: event.toolUse.name })}`)
+        break
+
+      // Forward the final result
+      case 'agentResultEvent':
+        console.log(`data: ${JSON.stringify(event)}`)
+        break
+    }
+  }
+  // --8<-- [end:event_serialization]
+}
