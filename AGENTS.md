@@ -14,162 +14,180 @@ This document provides guidance specifically for AI agents working on the Strand
 
 ## Directory Structure
 
+The repo is an npm workspace monorepo. The root `package.json` delegates all build/test/lint commands to the `strands-ts` workspace package.
+
 ```
 sdk-typescript/
-├── src/                          # Source code (all production code)
-│   ├── __tests__/                # Unit tests for root-level source files
-│   │   ├── errors.test.ts        # Tests for error classes
-│   │   ├── index.test.ts         # Tests for main entry point
-│   │   └── app-state.test.ts     # Tests for app state
+├── strands-ts/                   # SDK workspace package
+│   ├── src/                      # All production code
+│   │   ├── __fixtures__/         # Shared test fixtures (mocks, helpers)
+│   │   ├── __tests__/            # Unit tests for root-level source files
+│   │   │
+│   │   ├── a2a/                  # Agent-to-agent protocol
+│   │   │   ├── __tests__/
+│   │   │   ├── a2a-agent.ts      # A2A agent client
+│   │   │   ├── adapters.ts       # Strands/A2A type converters
+│   │   │   ├── events.ts         # A2A streaming events
+│   │   │   ├── executor.ts       # A2A executor
+│   │   │   ├── express-server.ts # Express-based A2A server
+│   │   │   ├── server.ts         # A2A server base
+│   │   │   └── index.ts
+│   │   │
+│   │   ├── agent/                # Agent loop and streaming
+│   │   │   ├── __tests__/
+│   │   │   ├── agent.ts          # Core agent implementation
+│   │   │   ├── agent-as-tool.ts  # Wrap agent as a tool
+│   │   │   ├── printer.ts        # Agent output printing
+│   │   │   └── snapshot.ts       # Agent state snapshots
+│   │   │
+│   │   ├── conversation-manager/ # Conversation history strategies
+│   │   │   ├── __tests__/
+│   │   │   ├── conversation-manager.ts
+│   │   │   ├── null-conversation-manager.ts
+│   │   │   ├── sliding-window-conversation-manager.ts
+│   │   │   ├── summarizing-conversation-manager.ts
+│   │   │   └── index.ts
+│   │   │
+│   │   ├── hooks/                # Hooks system for extensibility
+│   │   │   ├── __tests__/
+│   │   │   ├── events.ts
+│   │   │   ├── registry.ts
+│   │   │   ├── types.ts
+│   │   │   └── index.ts
+│   │   │
+│   │   ├── logging/              # Structured logging
+│   │   │   ├── __tests__/
+│   │   │   ├── logger.ts
+│   │   │   ├── types.ts
+│   │   │   └── index.ts
+│   │   │
+│   │   ├── models/               # Model provider implementations
+│   │   │   ├── __tests__/
+│   │   │   ├── google/           # Google Gemini provider
+│   │   │   ├── anthropic.ts      # Anthropic Claude
+│   │   │   ├── bedrock.ts        # AWS Bedrock
+│   │   │   ├── openai.ts         # OpenAI
+│   │   │   ├── vercel.ts         # Vercel AI SDK
+│   │   │   ├── model.ts          # Base model interface
+│   │   │   └── streaming.ts      # Streaming event types
+│   │   │
+│   │   ├── multiagent/           # Multi-agent orchestration
+│   │   │   ├── __tests__/
+│   │   │   ├── graph.ts          # Graph orchestrator (DAG)
+│   │   │   ├── swarm.ts          # Swarm orchestrator (handoff)
+│   │   │   ├── multiagent.ts     # Base multi-agent class
+│   │   │   ├── nodes.ts          # Node types
+│   │   │   ├── state.ts          # State management
+│   │   │   ├── events.ts         # Streaming events
+│   │   │   ├── edge.ts           # Edge definitions
+│   │   │   ├── queue.ts          # Execution queue
+│   │   │   ├── snapshot.ts       # Multi-agent snapshots
+│   │   │   ├── plugins.ts        # Multi-agent plugins
+│   │   │   └── index.ts
+│   │   │
+│   │   ├── plugins/              # Plugin system
+│   │   │   ├── __tests__/
+│   │   │   ├── plugin.ts
+│   │   │   ├── registry.ts
+│   │   │   └── index.ts
+│   │   │
+│   │   ├── registry/             # Tool registry
+│   │   │   ├── __tests__/
+│   │   │   └── tool-registry.ts
+│   │   │
+│   │   ├── session/              # Session management
+│   │   │   ├── __tests__/
+│   │   │   ├── session-manager.ts
+│   │   │   ├── storage.ts        # Storage interface
+│   │   │   ├── file-storage.ts   # File-based storage
+│   │   │   ├── s3-storage.ts     # S3 storage
+│   │   │   ├── types.ts
+│   │   │   ├── validation.ts
+│   │   │   └── index.ts
+│   │   │
+│   │   ├── telemetry/            # OpenTelemetry tracing and metrics
+│   │   │   ├── __tests__/
+│   │   │   ├── tracer.ts
+│   │   │   ├── meter.ts
+│   │   │   ├── config.ts
+│   │   │   ├── json.ts
+│   │   │   ├── types.ts
+│   │   │   ├── utils.ts
+│   │   │   └── index.ts
+│   │   │
+│   │   ├── tools/                # Tool definitions and types
+│   │   │   ├── __tests__/
+│   │   │   ├── function-tool.ts
+│   │   │   ├── mcp-tool.ts
+│   │   │   ├── noop-tool.ts
+│   │   │   ├── structured-output-tool.ts
+│   │   │   ├── tool-factory.ts
+│   │   │   ├── tool.ts
+│   │   │   ├── zod-tool.ts
+│   │   │   ├── zod-utils.ts
+│   │   │   └── types.ts
+│   │   │
+│   │   ├── types/                # Core type definitions
+│   │   │   ├── __tests__/
+│   │   │   ├── agent.ts
+│   │   │   ├── citations.ts
+│   │   │   ├── json.ts
+│   │   │   ├── media.ts
+│   │   │   ├── messages.ts
+│   │   │   ├── serializable.ts
+│   │   │   ├── snapshot.ts
+│   │   │   └── validation.ts
+│   │   │
+│   │   ├── vended-plugins/       # Optional vended plugins
+│   │   │   └── skills/           # AgentSkills plugin
+│   │   │
+│   │   ├── vended-tools/         # Optional vended tools
+│   │   │   ├── bash/
+│   │   │   ├── file-editor/
+│   │   │   ├── http-request/
+│   │   │   └── notebook/
+│   │   │
+│   │   ├── errors.ts             # Custom error classes
+│   │   ├── index.ts              # Main SDK entry point
+│   │   ├── mcp.ts                # MCP client implementation
+│   │   ├── mime.ts               # MIME type utilities
+│   │   └── state-store.ts        # State store implementation
 │   │
-│   ├── agent/                    # Agent loop and streaming
-│   │   ├── __tests__/            # Unit tests for agent loop
-│   │   │   ├── agent.test.ts     # Tests for agent implementation
-│   │   │   └── printer.test.ts   # Tests for printer
-│   │   ├── agent.ts              # Core agent implementation
-│   │   ├── printer.ts            # Agent output printing
-│   │   └── streaming.ts          # Agent streaming event types
+│   ├── test/                     # Tests outside of source
+│   │   ├── integ/                # Integration tests
+│   │   │   ├── a2a/
+│   │   │   ├── conversation-manager/
+│   │   │   ├── mcp/
+│   │   │   ├── models/
+│   │   │   ├── multiagent/
+│   │   │   ├── skills/
+│   │   │   ├── tools/
+│   │   │   ├── agent.test.ts
+│   │   │   └── ...
+│   │   └── packages/             # Package compatibility tests (CJS/ESM)
 │   │
-│   ├── conversation-manager/ # Conversation management implementations
-│   │   ├── __tests__/        # Unit tests for conversation managers
-│   │   │   ├── conversation-manager.test.ts
-│   │   │   ├── null-conversation-manager.test.ts
-│   │   │   ├── sliding-window-conversation-manager.test.ts
-│   │   │   └── summarizing-conversation-manager.test.ts
-│   │   ├── conversation-manager.ts        # Abstract base class
-│   │   ├── null-conversation-manager.ts   # No-op implementation
-│   │   ├── sliding-window-conversation-manager.ts  # Sliding window strategy
-│   │   ├── summarizing-conversation-manager.ts     # Summarization-based strategy
-│   │   └── index.ts          # Public exports
+│   ├── examples/                 # Example applications
+│   │   ├── agents-as-tools/
+│   │   ├── browser-agent/
+│   │   ├── first-agent/
+│   │   ├── graph/
+│   │   ├── mcp/
+│   │   ├── swarm/
+│   │   └── telemetry/
 │   │
-│   ├── hooks/                    # Hooks system for extensibility
-│   │   ├── __tests__/            # Unit tests for hooks
-│   │   │   ├── events.test.ts    # Tests for hook events
-│   │   │   └── registry.test.ts  # Tests for HookRegistry
-│   │   ├── events.ts             # HookEvent base class and concrete events
-│   │   ├── registry.ts           # HookRegistry implementation
-│   │   ├── types.ts              # Hook-related type definitions
-│   │   └── index.ts              # Public exports for hooks
-│   │
-│   ├── plugins/                  # Plugin system for agent extensibility
-│   │   ├── __tests__/            # Unit tests for plugins
-│   │   │   ├── plugin.test.ts    # Tests for Plugin abstract class
-│   │   │   └── registry.test.ts  # Tests for PluginRegistry
-│   │   ├── plugin.ts             # Plugin abstract base class
-│   │   ├── registry.ts           # PluginRegistry implementation
-│   │   └── index.ts              # Public exports for plugins
-│   │
-│   ├── models/                   # Model provider implementations
-│   │   ├── __tests__/            # Unit tests for model providers
-│   │   │   └── bedrock.test.ts   # Tests for Bedrock model provider
-│   │   ├── bedrock.ts            # AWS Bedrock model provider
-│   │   ├── model.ts              # Base model provider interface
-│   │   └── streaming.ts          # Streaming event types
-│   │
-│   ├── tools/                    # Tool definitions and types
-│   │   ├── __tests__/            # Unit tests for tools
-│   │   │   ├── registry.test.ts  # Tests for ToolRegistry
-│   │   │   ├── tool.test.ts      # Tests for FunctionTool
-│   │   │   └── structured-output-tool.test.ts  # Tests for StructuredOutputTool
-│   │   ├── function-tool.ts      # FunctionTool implementation
-│   │   ├── mcp-tool.ts           # MCP tool wrapper
-│   │   ├── structured-output-tool.ts  # Structured output validation tool
-│   │   ├── registry.ts           # ToolRegistry implementation
-│   │   ├── tool.ts               # Tool interface
-│   │   ├── zod-utils.ts          # Zod to JSON Schema conversion
-│   │   └── types.ts              # Tool-related type definitions
-│   │
-│   ├── multiagent/               # Multi-agent orchestration patterns
-│   │   ├── __tests__/            # Unit tests for multi-agent
-│   │   │   ├── graph.test.ts     # Tests for Graph orchestrator
-│   │   │   ├── swarm.test.ts     # Tests for Swarm orchestrator
-│   │   │   ├── nodes.test.ts     # Tests for Node types
-│   │   │   ├── events.test.ts    # Tests for multi-agent events
-│   │   │   └── queue.test.ts     # Tests for execution queue
-│   │   ├── base.ts               # MultiAgentBase interface
-│   │   ├── graph.ts              # Graph orchestrator (DAG execution)
-│   │   ├── swarm.ts              # Swarm orchestrator (handoff-based)
-│   │   ├── nodes.ts              # Node types (AgentNode, MultiAgentNode)
-│   │   ├── state.ts              # MultiAgentState, NodeResult, Status
-│   │   ├── events.ts             # Multi-agent streaming events
-│   │   ├── edge.ts               # Graph edge definitions
-│   │   ├── queue.ts              # Node execution queue
-│   │   └── index.ts              # Public exports
-│   │
-│   ├── types/                    # Core type definitions
-│   │   ├── json.ts               # JSON schema and value types
-│   │   └── messages.ts           # Message and content block types
-│   │
-│   ├── __tests__/                # Unit tests for root-level source files
-│   │   ├── errors.test.ts        # Tests for error classes
-│   │   ├── index.test.ts         # Tests for main entry point
-│   │   └── mcp.test.ts           # Tests for MCP integration
-│   │
-│   ├── vended-plugins/            # Optional vended plugins (not part of core SDK)
-│   │   └── skills/               # AgentSkills plugin for progressive skill disclosure
-│   │       ├── __tests__/        # Unit tests for skills plugin
-│   │       │   ├── agent-skills.test.node.ts  # Tests for AgentSkillsPlugin
-│   │       │   └── skill.test.node.ts         # Tests for Skill data model
-│   │       ├── agent-skills.ts   # AgentSkillsPlugin implementation
-│   │       ├── skill.ts          # Skill data model and loading utilities
-│   │       └── index.ts          # Public exports for skills plugin
-│   │
-│   ├── mcp.ts                    # MCP client implementation
-│   ├── errors.ts                 # Custom error classes
-│   ├── app-state.ts              # App state implementation
-│   └── index.ts                  # Main SDK entry point (single export point)
-│
-├── vended-tools/                 # Optional vended tools (not part of core SDK)
-│   ├── notebook/                 # Notebook tool for managing text notebooks
-│   │   ├── __tests__/            # Unit tests for notebook tool
-│   │   │   └── notebook.test.ts
-│   │   ├── notebook.ts           # Notebook implementation
-│   │   ├── types.ts              # Notebook type definitions
-│   │   ├── index.ts              # Public exports for notebook tool
-│   │   └── README.md             # Notebook tool documentation
-│   └── README.md                 # Vended tools overview
-│
-├── test/integ/                  # Integration tests (separate from source)
-│   ├── multiagent/               # Multi-agent integration tests
-│   │   ├── graph.test.ts         # Graph orchestrator integration tests
-│   │   └── swarm.test.ts         # Swarm orchestrator integration tests
-│   ├── skills/                   # Skills plugin integration tests
-│   │   └── agent-skills.test.node.ts  # End-to-end skill activation tests
-│   ├── bedrock.test.ts           # Bedrock integration tests (requires AWS credentials)
-│   ├── hooks.test.ts             # Hooks integration tests
-│   └── registry.test.ts          # ToolRegistry integration tests
-│
-├── examples/                     # Example applications
-│   ├── first-agent/              # Basic agent usage example
-│   ├── graph/                    # Graph multi-agent orchestration example
-│   ├── mcp/                      # MCP integration examples
-│   ├── swarm/                    # Swarm multi-agent orchestration example
-│   └── telemetry/                # OpenTelemetry integration example
+│   ├── package.json              # SDK package config and dependencies
+│   ├── tsconfig.base.json        # TypeScript configuration
+│   ├── vitest.config.ts          # Testing configuration
+│   └── eslint.config.js          # Linting configuration
 │
 ├── .github/                      # GitHub Actions workflows
-│   ├── workflows/                # CI/CD workflows
-│   │   ├── pr-and-push.yml       # Triggers test/lint on PR and push
-│   │   ├── test-lint.yml         # Unit tests and linting
-│   │   └── integration-test.yml  # Secure integration tests with AWS
-│   └── agent-sops/               # Agent system prompts
+│   └── workflows/
 │
-├── .project/                     # Project management (tasks, tracking)
-│   ├── tasks/                    # Active tasks
-│   ├── tasks/completed/          # Completed tasks
-│   ├── project-overview.md       # Project goals and roadmap
-│   └── task-registry.md          # Task dependencies
+├── .husky/                       # Git hooks (pre-commit checks)
 │
-├── dist/                         # Compiled output (generated, not in git)
-├── coverage/                     # Test coverage reports (generated)
-├── node_modules/                 # Dependencies (generated)
-│
-├── package.json                  # Project configuration and dependencies
-├── tsconfig.json                 # TypeScript compiler configuration
-├── vitest.config.ts              # Testing configuration (with unit/integ projects)
-├── eslint.config.js              # Linting configuration
+├── package.json                  # Root workspace config (delegates to strands-ts)
 ├── .prettierrc                   # Code formatting configuration
 ├── .gitignore                    # Git ignore rules
-├── .husky/                       # Git hooks (pre-commit checks)
 │
 ├── AGENTS.md                     # This file (agent guidance)
 ├── CONTRIBUTING.md               # Human contributor guidelines
@@ -178,22 +196,27 @@ sdk-typescript/
 
 ### Directory Purposes
 
-- **`src/`**: All production code lives here with co-located unit tests
-- **`src/__tests__/`**: Unit tests for root-level source files
-- **`src/agent/`**: Agent loop coordination, streaming event types, output printing, and conversation management
-- **`src/agent/conversation-manager/`**: Conversation history management strategies
-- **`src/hooks/`**: Hooks system for event-driven extensibility
-- **`src/plugins/`**: Plugin system for extending agent functionality
-- **`src/models/`**: Model provider implementations (Bedrock, OpenAI, future providers)
-- **`src/tools/`**: Tool definitions, types, and structured output validation with Zod schemas
-- **`src/multiagent/`**: Multi-agent orchestration patterns (Graph for DAG execution, Swarm for handoff-based routing)
-- **`src/types/`**: Core type definitions used across the SDK
-- **`src/vended-plugins/`**: Optional vended plugins (not part of core SDK, independently importable)
-- **`src/vended-plugins/skills/`**: AgentSkills plugin — progressive skill disclosure via SKILL.md files (AgentSkills.io spec)
-- **`src/vended-tools/`**: Optional vended tools (not part of core SDK, independently importable)
-- **`test/integ/`**: Integration tests (tests public API and external integrations)
+- **`strands-ts/`**: The SDK workspace package containing all source, tests, and examples
+- **`strands-ts/src/`**: All production code with co-located unit tests
+- **`strands-ts/src/__fixtures__/`**: Shared test fixtures (mock models, helpers)
+- **`strands-ts/src/a2a/`**: Agent-to-agent protocol (A2A client, server, adapters)
+- **`strands-ts/src/agent/`**: Agent loop coordination, output printing, snapshots
+- **`strands-ts/src/conversation-manager/`**: Conversation history management strategies
+- **`strands-ts/src/hooks/`**: Hooks system for event-driven extensibility
+- **`strands-ts/src/logging/`**: Structured logging utilities
+- **`strands-ts/src/models/`**: Model provider implementations (Bedrock, Anthropic, OpenAI, Google, Vercel)
+- **`strands-ts/src/multiagent/`**: Multi-agent orchestration patterns (Graph for DAG execution, Swarm for handoff-based routing)
+- **`strands-ts/src/plugins/`**: Plugin system for extending agent functionality
+- **`strands-ts/src/registry/`**: Tool registry implementation
+- **`strands-ts/src/session/`**: Session management (file, S3, custom storage)
+- **`strands-ts/src/telemetry/`**: OpenTelemetry tracing and metrics
+- **`strands-ts/src/tools/`**: Tool definitions, types, and structured output validation with Zod schemas
+- **`strands-ts/src/types/`**: Core type definitions used across the SDK
+- **`strands-ts/src/vended-plugins/`**: Optional vended plugins (not part of core SDK, independently importable)
+- **`strands-ts/src/vended-tools/`**: Optional vended tools (bash, file-editor, http-request, notebook)
+- **`strands-ts/test/integ/`**: Integration tests (tests public API and external integrations)
+- **`strands-ts/examples/`**: Example applications
 - **`.github/workflows/`**: CI/CD automation and quality gates
-- **`.project/`**: Task management and project tracking
 
 **IMPORTANT**: After making changes that affect the directory structure (adding new directories, moving files, or adding significant new files), you MUST update this directory structure section to reflect the current state of the repository.
 
@@ -230,6 +253,7 @@ See [PR.md](docs/PR.md) for the complete guidance and template.
 ### 4. Quality Gates
 
 Pre-commit hooks automatically run:
+- Build (via npm run build, required for workspace type resolution)
 - Unit tests (via npm test)
 - Linting (via npm run lint)
 - Format checking (via npm run format:check)
@@ -319,7 +343,7 @@ import { something } from 'external-package'
 
 **For source files**:
 ```
-src/
+strands-ts/src/
 ├── module.ts              # Source file
 └── __tests__/
     └── module.test.ts     # Unit tests co-located
@@ -360,7 +384,7 @@ export async function* mainFunction() {
 
 **For integration tests**:
 ```
-test/integ/
+strands-ts/test/integ/
 └── feature.test.ts        # Tests public API
 ```
 
@@ -669,7 +693,7 @@ export interface CitationSourceContent {
 - Use `type` alias (not `interface`) so it can be expanded to a union later
 - Each variant's field is **required** within that variant
 - Use object-key discrimination (`'text' in source`) to narrow variants at runtime
-- See `DocumentSourceData` in `src/types/media.ts` and `CitationLocation` in `src/types/citations.ts` for reference implementations
+- See `DocumentSourceData` in `strands-ts/src/types/media.ts` and `CitationLocation` in `strands-ts/src/types/citations.ts` for reference implementations
 
 ### Error Handling
 
@@ -744,7 +768,7 @@ When adding or modifying dependencies, you **MUST** follow the guidelines in [do
 
 **Don't**:
 - Use `any` type (enforced by ESLint)
-- Put unit tests in separate `tests/` directory (use `src/**/__tests__/**`)
+- Put unit tests in separate `tests/` directory (use `strands-ts/src/**/__tests__/**`)
 - Skip documentation for exported functions
 - Use semicolons (Prettier will remove them)
 - Commit without running pre-commit hooks
@@ -823,7 +847,8 @@ When responding to PR feedback:
 - **docs/TESTING.md**: Comprehensive testing guidelines (MUST follow when writing tests)
 - **docs/PR.md**: Pull request guidelines and template
 - **README.md**: Public-facing documentation, links to strandsagents.com
-- **package.json**: Defines all npm scripts referenced in documentation
+- **package.json**: Root workspace config that delegates to strands-ts
+- **strands-ts/package.json**: SDK package config, dependencies, and npm scripts
 
 ## Additional Resources
 
