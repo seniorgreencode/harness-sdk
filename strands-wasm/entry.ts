@@ -32,6 +32,12 @@ import { BedrockModel } from '@strands-agents/sdk/bedrock';
 import { OpenAIModel } from '@strands-agents/sdk/openai';
 import { GeminiModel } from '@strands-agents/sdk/gemini';
 import type { StopReason, AgentStreamEvent, Model, BaseModelConfig } from '@strands-agents/sdk';
+import {
+  ConversationManager,
+  NullConversationManager,
+  SlidingWindowConversationManager,
+  SummarizingConversationManager,
+} from '@strands-agents/sdk';
 
 // All log calls go through `hostLog` (the WIT import).  The host can
 // route them to the host language's logging framework (e.g. Python `logging`).
@@ -390,6 +396,43 @@ function createSessionManager(config: AgentConfig): SessionManager | undefined {
   });
 }
 
+/** Instantiate a conversation manager from the WIT config, or undefined to use the TS Agent default. */
+function createConversationManager(config: AgentConfig): ConversationManager | undefined {
+  const cmConfig = (config as any).conversationManager;
+  if (!cmConfig) {
+    return undefined;
+  }
+  switch (cmConfig.strategy) {
+    case 'none':
+      return new NullConversationManager();
+    case 'sliding-window':
+      return new SlidingWindowConversationManager({
+        windowSize: cmConfig.windowSize,
+        shouldTruncateResults: cmConfig.shouldTruncateResults,
+      });
+    case 'summarizing': {
+      let summaryModel: Model<BaseModelConfig> | undefined;
+      if (cmConfig.summarizationModelConfig) {
+        try {
+          const parsed = JSON.parse(cmConfig.summarizationModelConfig);
+          summaryModel = createModel(parsed);
+        } catch (e) {
+          glog('warn', 'failed to parse summarization model config, using agent model', errContext(e));
+        }
+      }
+      return new SummarizingConversationManager({
+        model: summaryModel,
+        summaryRatio: cmConfig.summaryRatio ?? undefined,
+        preserveRecentMessages: cmConfig.preserveRecentMessages ?? undefined,
+        summarizationSystemPrompt: cmConfig.summarizationSystemPrompt ?? undefined,
+      });
+    }
+    default:
+      glog('warn', `unknown conversation manager strategy: ${cmConfig.strategy}, using default`);
+      return undefined;
+  }
+}
+
 class AgentImpl {
   private agent: Agent;
   private defaultTools: FunctionTool[] | undefined;
@@ -408,6 +451,7 @@ class AgentImpl {
     this.defaultTools = createTools(config.tools);
     this.lifecycleBridge = new LifecycleBridge();
     this.sessionManager = createSessionManager(config);
+    const conversationManager = createConversationManager(config);
 
     const hooks: any[] = [this.lifecycleBridge];
     if (this.sessionManager) hooks.push(this.sessionManager);
@@ -417,6 +461,7 @@ class AgentImpl {
       systemPrompt: buildSystemPrompt(config),
       tools: this.defaultTools,
       hooks,
+      conversationManager,
       printer: false,
     });
   }
