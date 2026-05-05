@@ -71,6 +71,7 @@ import {
   BeforeToolCallEvent,
   MessageAddedEvent,
 } from '@strands-agents/sdk'
+import { z } from 'zod'
 
 // All log calls go through `hostLog` (the WIT import).  The host can
 // route them to the host language's logging framework (e.g. Python `logging`).
@@ -134,12 +135,13 @@ function mapStopReasonTag(reason: StopReason): StopData['reason'] {
 /** Convert a TS SDK StopReason to a WIT StopData with usage/metrics. */
 function mapStopReason(
   reason: StopReason,
-  stopData?: { usage?: Partial<Usage>; metrics?: Partial<Metrics> }
+  stopData?: { usage?: Partial<Usage>; metrics?: Partial<Metrics>; structuredOutput?: unknown }
 ): StopData {
   return {
     reason: mapStopReasonTag(reason),
     usage: mapUsage(stopData?.usage),
     metrics: mapMetrics(stopData?.metrics),
+    structuredOutput: stopData?.structuredOutput !== undefined ? JSON.stringify(stopData.structuredOutput) : undefined,
   }
 }
 
@@ -534,6 +536,16 @@ function createConversationManager(config: AgentConfig): ConversationManager | u
   }
 }
 
+/** Parse a JSON Schema string into a Zod schema for structured output validation. */
+function parseStructuredOutputSchema(jsonStr: string | undefined): z.ZodSchema | undefined {
+  if (!jsonStr) return undefined
+  try {
+    return z.fromJSONSchema(JSON.parse(jsonStr))
+  } catch (e) {
+    throw new Error(`Invalid structured output schema: ${e instanceof Error ? e.message : String(e)}`)
+  }
+}
+
 class AgentImpl {
   private agent: Agent
   private defaultTools: FunctionTool[] | undefined
@@ -554,6 +566,8 @@ class AgentImpl {
     this.sessionManager = createSessionManager(config)
     const conversationManager = createConversationManager(config)
 
+    const structuredOutputSchema = parseStructuredOutputSchema(config.structuredOutputSchema)
+
     const plugins: Plugin[] = [this.lifecycleBridge]
 
     this.agent = new Agent({
@@ -563,6 +577,7 @@ class AgentImpl {
       plugins,
       sessionManager: this.sessionManager,
       conversationManager,
+      structuredOutputSchema,
       printer: false,
     })
   }
@@ -589,7 +604,16 @@ class AgentImpl {
       this.agent.model = createToolChoiceProxy(originalModel, tc)
     }
 
-    return new ResponseStreamImpl(this.agent, args.input, this.lifecycleBridge, this.defaultTools, originalModel)
+    const structuredOutputSchema = parseStructuredOutputSchema(args.structuredOutputSchema)
+
+    return new ResponseStreamImpl(
+      this.agent,
+      args.input,
+      this.lifecycleBridge,
+      this.defaultTools,
+      originalModel,
+      structuredOutputSchema
+    )
   }
 
   getMessages(): string {
@@ -634,13 +658,16 @@ class ResponseStreamImpl {
     input: string,
     bridge: LifecycleBridge,
     defaultTools?: FunctionTool[],
-    originalModel?: Model<BaseModelConfig>
+    originalModel?: Model<BaseModelConfig>,
+    structuredOutputSchema?: z.ZodSchema
   ) {
     this.agent = agent
     this.bridge = bridge
     this.defaultTools = defaultTools
     this.originalModel = originalModel
-    this.generator = agent.stream(parseInput(input))
+    this.generator = agent.stream(parseInput(input), {
+      structuredOutputSchema,
+    })
   }
 
   private restoreDefaults(): void {
@@ -672,6 +699,7 @@ class ResponseStreamImpl {
               val: mapStopReason(agentResult.stopReason, {
                 usage: agentResult.metrics?.accumulatedUsage,
                 metrics: agentResult.metrics?.accumulatedMetrics,
+                structuredOutput: agentResult.structuredOutput,
               }),
             },
           ]
