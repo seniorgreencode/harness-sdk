@@ -107,6 +107,14 @@ sdk-typescript/
 │   │   │   ├── __tests__/
 │   │   │   └── tool-registry.ts
 │   │   │
+│   │   ├── retry/                # Retry strategies for model calls
+│   │   │   ├── __tests__/
+│   │   │   ├── backoff-strategy.ts
+│   │   │   ├── model-retry-strategy.ts         # Abstract ModelRetryStrategy base class
+│   │   │   ├── default-model-retry-strategy.ts
+│   │   │   ├── retry-strategy.ts               # RetryStrategy union type + dedup helper
+│   │   │   └── index.ts
+│   │   │
 │   │   ├── session/              # Session management
 │   │   │   ├── __tests__/
 │   │   │   ├── session-manager.ts
@@ -271,6 +279,7 @@ sdk-typescript/
 - **`strands-ts/src/multiagent/`**: Multi-agent orchestration patterns (Graph for DAG execution, Swarm for handoff-based routing)
 - **`strands-ts/src/plugins/`**: Plugin system for extending agent functionality
 - **`strands-ts/src/registry/`**: Tool registry implementation
+- **`strands-ts/src/retry/`**: Retry strategies for model calls (backoff strategies, abstract `ModelRetryStrategy` plugin base class, concrete `DefaultModelRetryStrategy`)
 - **`strands-ts/src/session/`**: Session management (file, S3, custom storage)
 - **`strands-ts/src/telemetry/`**: OpenTelemetry tracing and metrics
 - **`strands-ts/src/tools/`**: Tool definitions, types, and structured output validation with Zod schemas
@@ -561,11 +570,11 @@ Name plugins for what they do, not for the `Plugin` interface they implement.
 ```typescript
 // Good
 export class AgentSkills implements Plugin { ... }
-export class ModelRetryStrategy implements Plugin { ... }
+export class DefaultModelRetryStrategy implements Plugin { ... }
 
 // Bad
 export class AgentSkillsPlugin implements Plugin { ... }
-export class ModelRetryStrategyPlugin implements Plugin { ... }
+export class DefaultModelRetryStrategyPlugin implements Plugin { ... }
 ```
 
 Same rule for the associated config (`AgentSkillsConfig`, not `AgentSkillsPluginConfig`).
