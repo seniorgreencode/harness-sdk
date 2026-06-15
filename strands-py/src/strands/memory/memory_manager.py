@@ -7,8 +7,7 @@ import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
-from ..hooks.events import AfterInvocationEvent, MessageAddedEvent
-from ..hooks.registry import HookOrder
+from ..hooks.events import MessageAddedEvent
 from ..plugins.plugin import Plugin
 from ..tools.decorator import tool
 from ..types.exceptions import AggregateMemoryError
@@ -64,17 +63,13 @@ def _flatten_reasons(reasons: list[BaseException]) -> list[BaseException]:
 class MemoryManager(Plugin):
     """Provides cross-session memory retrieval and storage for agents.
 
-    When using the synchronous ``Agent(...)`` entry point, set
-    ``flush_on_invocation_end=True`` so extraction writes persist across its
-    per-invocation event loop.
-
     Example:
         ```python
         from strands import Agent
         from strands.memory import MemoryManager
 
-        memory_manager = MemoryManager(stores=[my_store], flush_on_invocation_end=True)
-        agent = Agent(model=model, plugins=[memory_manager])
+        memory_manager = MemoryManager(stores=[my_store])
+        agent = Agent(model=model, memory_manager=memory_manager)
         agent("Remember I prefer dark mode")
 
         results = await memory_manager.search("user preferences")
@@ -88,7 +83,6 @@ class MemoryManager(Plugin):
         stores: list[MemoryStore],
         search_tool_config: MemoryToolConfig | bool = True,
         add_tool_config: MemoryAddToolConfig | bool = False,
-        flush_on_invocation_end: bool = False,
     ) -> None:
         """Initialize the memory manager.
 
@@ -100,11 +94,6 @@ class MemoryManager(Plugin):
             add_tool_config: Add tool configuration. ``False`` (default) disables
                 the add tool; ``True`` lets it write to all writable stores; a
                 :class:`MemoryAddToolConfig` restricts/customizes it.
-            flush_on_invocation_end: When True, await pending extraction writes at
-                the end of each agent invocation. Enable when driving the agent
-                through the synchronous ``Agent(...)`` entry point, whose
-                per-invocation event loop would otherwise cancel in-flight saves.
-                Defaults to False (fire-and-forget).
 
         Raises:
             ValueError: If ``stores`` is empty, a store name is duplicated, a
@@ -180,8 +169,6 @@ class MemoryManager(Plugin):
 
         # Extraction coordinator, created in ``init_agent`` when configured.
         self._coordinator: ExtractionCoordinator | None = None
-
-        self._flush_on_invocation_end = flush_on_invocation_end
 
         # Build tools now; surfaced via the ``tools`` property.
         self._memory_tools: list[AgentTool] = self._build_tools()
@@ -523,6 +510,11 @@ class MemoryManager(Plugin):
 
         Wires up automatic extraction for any store configured with an
         ``ExtractionConfig``. A no-op when no store uses extraction.
+
+        Extraction runs in the background. The synchronous ``Agent(...)`` entry
+        point awaits :meth:`flush` after each invocation so writes persist;
+        callers driving the agent through their own event loop should await
+        :meth:`flush` at a shutdown boundary.
         """
         if len(self._extraction_stores) == 0:
             return
@@ -537,19 +529,6 @@ class MemoryManager(Plugin):
             assert store.extraction is not None  # noqa: S101 - extraction stores always configure this.
             for trigger in _normalize_triggers(store.extraction.trigger):
                 trigger.attach(ExtractionTriggerContext(agent=agent, fire=self._make_fire(coordinator, store)))
-
-        if self._flush_on_invocation_end:
-            agent.add_hook(self._flush_after_invocation, AfterInvocationEvent, order=HookOrder.SDK_LAST)
-        else:
-            logger.warning(
-                "flush_on_invocation_end=<False> | background extraction is lost if the event loop closes "
-                "before it finishes (e.g. the synchronous Agent(...) entry point); safe to ignore if you "
-                "await MemoryManager.flush() at a shutdown boundary or enable flush_on_invocation_end."
-            )
-
-    async def _flush_after_invocation(self, event: AfterInvocationEvent) -> None:
-        """Await pending extraction writes at the end of an agent invocation."""
-        await self.flush()
 
     @staticmethod
     def _make_fire(coordinator: ExtractionCoordinator, store: MemoryStore) -> Callable[[], None]:
