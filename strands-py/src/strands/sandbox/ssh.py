@@ -8,7 +8,7 @@ import shlex
 from collections.abc import AsyncGenerator
 from typing import Any
 
-from .shell import PosixShellSandbox, build_shell_env_prefix
+from .posix_shell import PosixShellSandbox, build_shell_env_prefix
 from .stream_process import stream_process
 from .types import ExecutionResult, StreamChunk
 
@@ -142,7 +142,7 @@ class SshSandbox(PosixShellSandbox):
 
         Raises:
             ValueError: If an environment variable name is invalid.
-            TimeoutError: If execution exceeds ``timeout`` seconds.
+            SandboxTimeoutError: If execution exceeds ``timeout`` seconds.
         """
         effective_cwd = cwd if cwd is not None else self.working_dir
         env_prefix = build_shell_env_prefix(env)

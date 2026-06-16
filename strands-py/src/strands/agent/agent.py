@@ -64,6 +64,8 @@ from ..models.bedrock import BedrockModel
 from ..models.model import Model, _ModelPlugin
 from ..plugins import Plugin
 from ..plugins.registry import _PluginRegistry
+from ..sandbox import Sandbox
+from ..sandbox.not_a_sandbox_local_environment import NotASandboxLocalEnvironment
 from ..session.session_manager import SessionManager
 from ..telemetry.metrics import EventLoopMetrics
 from ..telemetry.tracer import get_tracer, serialize
@@ -176,6 +178,7 @@ class Agent(AgentBase):
         retry_strategy: ModelRetryStrategy | _DefaultRetryStrategySentinel | None = _DEFAULT_RETRY_STRATEGY,
         concurrent_invocation_mode: ConcurrentInvocationMode = ConcurrentInvocationMode.THROW,
         checkpointing: bool = False,
+        sandbox: Sandbox | None = None,
     ):
         """Initialize the Agent with the specified configuration.
 
@@ -271,12 +274,21 @@ class Agent(AgentBase):
                 The SDK does not capture conversation state in the checkpoint;
                 pair with a SessionManager for cross-process state continuity.
                 Defaults to False. See :mod:`strands.experimental.checkpoint`.
+            sandbox: Execution environment for running commands, code, and file operations.
+                When provided, sandbox-aware tools route operations through it via
+                ``context.agent.sandbox``. Defaults to ``None``, which falls back to a
+                :class:`~strands.sandbox.NotASandboxLocalEnvironment` that runs on the host
+                with no isolation.
 
         Raises:
             ValueError: If agent id contains path separators.
         """
         self.model = BedrockModel() if not model else BedrockModel(model_id=model) if isinstance(model, str) else model
         self.messages = messages if messages is not None else []
+        if sandbox is not None and not isinstance(sandbox, Sandbox):
+            raise TypeError(f"sandbox must be a Sandbox instance or None, got {type(sandbox).__name__}")
+        # Resolve once: configured sandbox, or this agent's own host default (not shared across agents).
+        self._sandbox: Sandbox = sandbox or NotASandboxLocalEnvironment()
         # initializing self._system_prompt for backwards compatibility
         self._system_prompt, self._system_prompt_content = split_system_prompt(system_prompt)
         self._default_structured_output_model = structured_output_model
@@ -589,6 +601,16 @@ class Agent(AgentBase):
             Multiple calls to cancel() are safe and idempotent.
         """
         self._cancel_signal.set()
+
+    @property
+    def sandbox(self) -> Sandbox:
+        """Execution environment for running commands, code, and file operations.
+
+        Returns the configured sandbox, or a per-agent host default
+        (:class:`~strands.sandbox.NotASandboxLocalEnvironment`, no isolation) when none was
+        configured.
+        """
+        return self._sandbox
 
     @property
     def system_prompt(self) -> str | None:
