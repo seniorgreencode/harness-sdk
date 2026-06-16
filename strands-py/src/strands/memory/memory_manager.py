@@ -15,8 +15,9 @@ from ..plugins.plugin import Plugin
 from ..tools.decorator import tool
 from ..types.exceptions import AggregateMemoryError
 from ..types.tools import AgentTool
-from .extraction.coordinator import ExtractionCoordinator
-from .extraction.types import ExtractionTrigger, ExtractionTriggerContext
+from .extraction.coordinator import ExtractionCoordinator, _ExtractionBinding
+from .extraction.resolve_extraction_config import _resolve_extraction_config
+from .extraction.types import ExtractionTriggerContext
 from .types import (
     InjectionFormatContext,
     InjectionQueryContext,
@@ -52,11 +53,6 @@ DEFAULT_MAX_SEARCH_RESULTS = 3
 
 # Default number of entries injected per model call when injection does not specify one.
 DEFAULT_MAX_ENTRIES = 5
-
-
-def _normalize_triggers(trigger: ExtractionTrigger | list[ExtractionTrigger]) -> list[ExtractionTrigger]:
-    """Normalize a store's ``trigger`` field (a single trigger or a list) to a list."""
-    return list(trigger) if isinstance(trigger, list) else [trigger]
 
 
 def _flatten_reasons(reasons: list[BaseException]) -> list[BaseException]:
@@ -121,6 +117,7 @@ class MemoryManager(Plugin):
             raise ValueError("MemoryManager: at least one store is required")
 
         seen_names: set[str] = set()
+        extraction_bindings: list[_ExtractionBinding] = []
         for store in stores:
             if store.name in seen_names:
                 raise ValueError(f"MemoryManager: duplicate store name '{store.name}'")
@@ -131,13 +128,16 @@ class MemoryManager(Plugin):
                     f"MemoryManager: store '{store.name}' is writable but has no add or add_messages method"
                 )
 
-            if store.extraction is not None:
+            extraction_config = _resolve_extraction_config(store.extraction, store)
+            if extraction_config is not None:
                 if not store.writable:
                     raise ValueError(f"MemoryManager: store '{store.name}' has extraction config but is not writable")
-                if len(_normalize_triggers(store.extraction.trigger)) == 0:
+                if len(extraction_config.triggers) == 0:
                     raise ValueError(f"MemoryManager: store '{store.name}' has extraction config but no triggers")
-                # Each extraction shape needs its matching write sink.
-                if store.extraction.extractor is not None:
+                # Each extraction shape needs its matching write sink. An extractor produces discrete
+                # entries written via `add`; without an extractor the raw message batch goes to
+                # `add_messages`.
+                if extraction_config.extractor is not None:
                     if not _has_method(store, "add"):
                         raise ValueError(
                             f"MemoryManager: store '{store.name}' has an extractor but no add method "
@@ -148,6 +148,7 @@ class MemoryManager(Plugin):
                         f"MemoryManager: store '{store.name}' has extraction config without an extractor "
                         "but no add_messages method"
                     )
+                extraction_bindings.append(_ExtractionBinding(store=store, config=extraction_config))
 
         super().__init__()
 
@@ -155,7 +156,8 @@ class MemoryManager(Plugin):
         self._search_stores = list(stores)
         # `add`-targeting paths (tool / programmatic) need an `add` method specifically.
         self._add_stores = [store for store in stores if store.writable and _has_method(store, "add")]
-        self._extraction_stores = [store for store in stores if store.writable and store.extraction is not None]
+        # Stores with extraction enabled, each paired with its resolved config; wired up in ``init_agent``.
+        self._extraction_stores = extraction_bindings
 
         self._search_tool_config: MemoryToolConfig | bool
         if search_tool_config is False:
@@ -560,10 +562,9 @@ class MemoryManager(Plugin):
         # Buffer every message so extraction has its own copy to save from.
         agent.add_hook(lambda event: coordinator.record(event.message), MessageAddedEvent)
 
-        for store in self._extraction_stores:
-            assert store.extraction is not None  # noqa: S101 - extraction stores always configure this.
-            for trigger in _normalize_triggers(store.extraction.trigger):
-                trigger.attach(ExtractionTriggerContext(agent=agent, fire=self._make_fire(coordinator, store)))
+        for binding in self._extraction_stores:
+            for trigger in binding.config.triggers:
+                trigger.attach(ExtractionTriggerContext(agent=agent, fire=self._make_fire(coordinator, binding.store)))
 
     def _init_injection(self, agent: Agent) -> None:
         """Register the injection middleware when injection is enabled.
