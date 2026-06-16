@@ -201,6 +201,9 @@ sidebar:
               - docs/user-guide/evals-sdk/evaluators/multimodal_faithfulness_evaluator
               - docs/user-guide/evals-sdk/evaluators/multimodal_instruction_following_evaluator
               - docs/user-guide/evals-sdk/evaluators/goal_success_rate_evaluator
+              - docs/user-guide/evals-sdk/evaluators/failure_communication_evaluator
+              - docs/user-guide/evals-sdk/evaluators/partial_completion_evaluator
+              - docs/user-guide/evals-sdk/evaluators/recovery_strategy_evaluator
               - docs/user-guide/evals-sdk/evaluators/tool_selection_evaluator
               - docs/user-guide/evals-sdk/evaluators/tool_parameter_evaluator
               - docs/user-guide/evals-sdk/evaluators/deterministic_evaluators
@@ -217,6 +220,7 @@ sidebar:
               - docs/user-guide/evals-sdk/simulators
               - docs/user-guide/evals-sdk/simulators/user_simulation
               - docs/user-guide/evals-sdk/simulators/tool_simulation
+          - docs/user-guide/evals-sdk/chaos_testing
           - label: Remote Trace Providers
             items:
               - docs/user-guide/evals-sdk/how-to/trace_providers
